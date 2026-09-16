@@ -1,4 +1,5 @@
 import numpy as np
+from pathlib import Path
 from scipy.optimize import minimize
 from scipy.special import logsumexp
 import matplotlib.pyplot as plt
@@ -22,6 +23,10 @@ q0_padding_factor = 0.0
 n_grid = 50
 N_GRID = 150
 N_Q0 = 150
+
+# Output directory
+RESULTS_DIR = Path("results")
+RESULTS_DIR.mkdir(exist_ok=True)
 
 # Read energies
 E_PBE_all = np.loadtxt("data/PBE0_energies.txt")[:N_SAMPLES]
@@ -57,7 +62,7 @@ axes[2].scatter(idx_all, qT_all, s=2)
 axes[2].scatter(idx, qT, s=16)
 axes[2].set_ylabel(r"$q_T$", fontsize=30)
 plt.tight_layout()
-plt.savefig("coordinate_time_series.png", dpi=300)
+plt.savefig(RESULTS_DIR / "coordinate_time_series.png", dpi=300)
 plt.close()
 
 q = np.column_stack((q0, qS, qT))
@@ -93,7 +98,7 @@ ax.set_ylabel(r"$q_T$", fontsize=30)
 ax.set_zlabel(r"$-k_BT\ln P(q_S,q_T)$ (Ha)")
 fig.colorbar(surf, ax=ax, shrink=0.7, pad=0.1, label=r"$-k_BT\ln P(q_S,q_T)$ (Ha)")
 plt.tight_layout()
-plt.savefig("KDE.png", dpi=300)
+plt.savefig(RESULTS_DIR / "KDE.png", dpi=300)
 plt.close()
 
 # Cubic polynomial basis
@@ -180,7 +185,7 @@ DeltaG_PBE = free_energy(theta, X)
 
 output_data = np.column_stack([idx, q[:, 0], q[:, 1], q[:, 2], DeltaG_PBE])
 np.savetxt(
-    f"DeltaG_PBE_n_grid_{n_grid}_fit_padding_factor_{fit_padding_factor}.txt",
+    RESULTS_DIR / f"DeltaG_PBE_n_grid_{n_grid}_fit_padding_factor_{fit_padding_factor}.txt",
     output_data,
     fmt=["%d", "%.10e", "%.10e", "%.10e", "%.10e"],
     header="index q0 qS qT DeltaG_PBE_Hartree",
@@ -262,9 +267,9 @@ def plot_3d_free_energy_surface(QS, QT, surface_data, q, sampled, filename, zlab
     cbar = fig.colorbar(surface, ax=ax, shrink=0.7, pad=0.1, ticks=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
     cbar.set_label(zlabel, fontsize=20)
     plt.tight_layout()
-    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    plt.savefig(RESULTS_DIR / filename, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"Saved {filename}")
+    print(f"Saved {RESULTS_DIR / filename}")
 
 def plot_delta_g_contour(QS, QT, surface_data, q, filename, cbarlabel):
     plt.figure(figsize=(8, 6))
@@ -279,9 +284,9 @@ def plot_delta_g_contour(QS, QT, surface_data, q, filename, cbarlabel):
     cbar = plt.colorbar(contour, ticks=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
     cbar.set_label(cbarlabel, fontsize=20)
     plt.tight_layout()
-    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    plt.savefig(RESULTS_DIR / filename, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"Saved {filename}")
+    print(f"Saved {RESULTS_DIR / filename}")
 
 plot_delta_g_contour(QS, QT, G0_surface, q, "DeltaG0_contour.png", r"$\Delta G_0$ (Ha)")
 plot_delta_g_contour(QS, QT, GS_surface, q, "DeltaGS_contour.png", r"$\Delta G_S$ (Ha)")
