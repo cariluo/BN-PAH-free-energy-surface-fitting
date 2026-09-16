@@ -3,11 +3,10 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
-from scipy.optimize import minimize
-from scipy.special import logsumexp
 
 from bn_pah_fes.config import Parameters
 from bn_pah_fes.data import load_data
+from bn_pah_fes.fitting import fit_free_energy
 from bn_pah_fes.kde import calculate_kde_surface
 from bn_pah_fes.polynomial import free_energy, polynomial_basis
 
@@ -16,9 +15,6 @@ plt.rcParams["font.family"] = "Times New Roman"
 
 # Parameters
 params = Parameters()
-T = params.temperature
-kBT = params.kBT
-beta = params.beta
 N_SAMPLES = params.n_samples
 N_ACF = params.n_acf
 fit_padding_factor = params.fit_padding_factor
@@ -34,18 +30,14 @@ RESULTS_DIR.mkdir(exist_ok=True)
 
 # Read energies
 data = load_data(Path("data"), N_SAMPLES, N_ACF)
-E_PBE_all = data.E_pbe_all
-E_PBE = data.E_pbe
-qS_all = data.qS_all
 qS = data.qS
-qT_all = data.qT_all
 qT = data.qT
-S0_all = data.S0_all
-S0 = data.S0
-q0_all = data.q0_all
 q0 = data.q0
-idx_all = data.idx_all
+qS_all = data.qS_all
+qT_all = data.qT_all
+q0_all = data.q0_all
 idx = data.idx
+idx_all = data.idx_all
 q = data.q
 
 samples_in_fit = data.samples_in_fit
@@ -89,69 +81,13 @@ plt.savefig(RESULTS_DIR / "KDE.png", dpi=300)
 plt.close()
 
 # Cubic polynomial fit
-q_mean = np.mean(q, axis=0)
-q_std = np.std(q, axis=0)
-q_scaled = (q - q_mean) / q_std
-X = polynomial_basis(q_scaled)
-
-# 3D integration grid for likelihood
-q_min = np.min(q_scaled, axis=0)
-q_max = np.max(q_scaled, axis=0)
-padding = fit_padding_factor * (q_max - q_min)
-box_min = q_min - padding
-box_max = q_max + padding
-
-q1_grid = np.linspace(box_min[0], box_max[0], n_grid)
-q2_grid = np.linspace(box_min[1], box_max[1], n_grid)
-q3_grid = np.linspace(box_min[2], box_max[2], n_grid)
-dq1, dq2, dq3 = q1_grid[1] - q1_grid[0], q2_grid[1] - q2_grid[0], q3_grid[1] - q3_grid[0]
-
-w1 = np.ones(n_grid) * dq1
-w2 = np.ones(n_grid) * dq2
-w3 = np.ones(n_grid) * dq3
-w1[[0, -1]] *= 0.5
-w2[[0, -1]] *= 0.5
-w3[[0, -1]] *= 0.5
-
-Q1, Q2, Q3 = np.meshgrid(q1_grid, q2_grid, q3_grid, indexing="ij")
-q_integration = np.column_stack([Q1.ravel(), Q2.ravel(), Q3.ravel()])
-X_integration = polynomial_basis(q_integration)
-W1, W2, W3 = np.meshgrid(w1, w2, w3, indexing="ij")
-integration_weights = (W1 * W2 * W3).ravel()
-log_integration_weights = np.log(integration_weights)
-
-def negative_log_likelihood(theta):
-    G_data = free_energy(theta, X)
-    G_grid = free_energy(theta, X_integration)
-    if not np.all(np.isfinite(G_data)) or not np.all(np.isfinite(G_grid)):
-        return np.inf
-    log_Z = logsumexp(-beta * G_grid + log_integration_weights)
-    if not np.isfinite(log_Z):
-        return np.inf
-    return beta * np.sum(G_data) + len(q_scaled) * log_Z
-
-# Fit
-theta0 = np.zeros(20)
-theta0[0] = np.sqrt(kBT)
-
-print("Starting optimization...")
-print(f"Number of samples: {len(q)}")
-print(f"Temperature:       {T:.2f} K")
-print(f"kBT:               {kBT:.8e} Ha")
-print(f"beta:              {beta:.8e} Ha^-1")
-
-result = minimize(
-    negative_log_likelihood,
-    theta0,
-    method="L-BFGS-B",
-    options={"maxiter": 2000, "ftol": 1e-10, "gtol": 1e-8, "maxls": 50},
-)
-print(result)
-if not result.success:
-    print("WARNING: optimization did not fully converge.")
-
-theta = result.x
-DeltaG_PBE = free_energy(theta, X)
+fit_result = fit_free_energy(data, params)
+theta = fit_result.theta
+q_mean = fit_result.q_mean
+q_std = fit_result.q_std
+q_scaled = fit_result.q_scaled
+X = fit_result.design_matrix
+DeltaG_PBE = fit_result.delta_g_pbe
 
 output_data = np.column_stack([idx, q[:, 0], q[:, 1], q[:, 2], DeltaG_PBE])
 np.savetxt(
@@ -186,9 +122,9 @@ for i in range(N_GRID):
         ])
         points_scaled = (points - q_mean) / q_std
         G_PBE = free_energy(theta, polynomial_basis(points_scaled))
-        exponent = -beta * (G_PBE + q0_grid)
-        log_integral = logsumexp(exponent) + np.log(dq0)
-        G0_surface[i, j] = -kBT * log_integral
+        exponent = -params.beta * (G_PBE + q0_grid)
+        log_integral = np.log(np.exp(exponent).sum()) + np.log(dq0)
+        G0_surface[i, j] = -params.kBT * log_integral
 
 GS_surface = G0_surface + QS
 GT_surface = G0_surface + QT
@@ -196,6 +132,7 @@ G0_min = np.min(G0_surface)
 G0_surface -= G0_min
 GS_surface -= G0_min
 GT_surface -= G0_min
+
 
 def calculate_G0(qS_values, qT_values):
     """Calculate unshifted G0(qS, qT) by numerical integration over q0."""
@@ -212,9 +149,9 @@ def calculate_G0(qS_values, qT_values):
         ])
         points_scaled = (points - q_mean) / q_std
         G_PBE = free_energy(theta, polynomial_basis(points_scaled))
-        exponent = -beta * (G_PBE + q0_grid)
-        log_integral = logsumexp(exponent) + np.log(dq0)
-        G0_values[index] = -kBT * log_integral
+        exponent = -params.beta * (G_PBE + q0_grid)
+        log_integral = np.log(np.exp(exponent).sum()) + np.log(dq0)
+        G0_values[index] = -params.kBT * log_integral
     return G0_values.reshape(qS_values.shape)
 
 G0_sampled = calculate_G0(q[:, 1], q[:, 2])
@@ -241,6 +178,7 @@ def plot_3d_free_energy_surface(QS, QT, surface_data, q, sampled, filename, zlab
     plt.close()
     print(f"Saved {RESULTS_DIR / filename}")
 
+
 def plot_delta_g_contour(QS, QT, surface_data, q, filename, cbarlabel):
     plt.figure(figsize=(8, 6))
     contour = plt.contourf(QS, QT, surface_data, levels=30, vmin=0.0, vmax=0.65, cmap="viridis")
@@ -257,6 +195,7 @@ def plot_delta_g_contour(QS, QT, surface_data, q, filename, cbarlabel):
     plt.savefig(RESULTS_DIR / filename, dpi=300, bbox_inches="tight")
     plt.close()
     print(f"Saved {RESULTS_DIR / filename}")
+
 
 plot_delta_g_contour(QS, QT, G0_surface, q, "DeltaG0_contour.png", r"$\Delta G_0$ (Ha)")
 plot_delta_g_contour(QS, QT, GS_surface, q, "DeltaGS_contour.png", r"$\Delta G_S$ (Ha)")
