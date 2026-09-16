@@ -227,7 +227,7 @@ def calculate_surfaces(
 
     q0_min, q0_max = q[:, 0].min(), q[:, 0].max()
     q0_pad = params.q0_padding_factor * (q0_max - q0_min)
-    q0_grid = np.linspace(q0_min - q0_pad, q0_max, params.n_q0)
+    q0_grid = np.linspace(q0_min - q0_pad, q0_max + q0_pad, params.n_q0)
 
     QS, QT = np.meshgrid(qS_grid, qT_grid, indexing="ij")
     G0_surface = calculate_G0(QS, QT, q0_grid, fit_result, params)
