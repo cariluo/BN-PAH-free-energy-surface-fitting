@@ -27,7 +27,7 @@ python -c "import numpy, scipy, matplotlib; print('Installation successful')"
 
 ## Data
 
-Create a `data/` directory in the repository for the input energy files:
+A `data/` directory is already included in the repository. Place the four input energy files directly into this directory:
 
 ```text
 BN-PAH-free-energy-surface-fitting/
@@ -43,7 +43,7 @@ BN-PAH-free-energy-surface-fitting/
 
 Each file should contain one energy value per trajectory step, with matching lengths.
 
-The large data files are intentionally not included in the GitHub repository. Place the files locally in `data/` before running the analysis.
+The large data files are intentionally not included in the GitHub repository. The `data/` directory is provided so the files can be placed there immediately after cloning the repository.
 
 ## Running
 
@@ -53,7 +53,7 @@ From the repository root, run:
 python fit_free_energy.py
 ```
 
-The script expects the input files in `data/`. It produces diagnostic and surface files including:
+The script reads the input files from `data/`. It produces diagnostic and surface files including:
 
 ```text
 KDE.png
