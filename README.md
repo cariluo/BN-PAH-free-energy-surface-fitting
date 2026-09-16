@@ -19,15 +19,6 @@ python -m pip install -e .
 
 The project dependencies (NumPy, SciPy, and Matplotlib) are specified in `pyproject.toml` and will be installed automatically.
 
-If you use Conda, activate your existing environment first and then run the same command:
-
-```bash
-conda activate YOUR_ENVIRONMENT
-python -m pip install -e .
-```
-
-No new Conda environment or Python virtual environment is required.
-
 ### Verify the installation
 
 ```bash
