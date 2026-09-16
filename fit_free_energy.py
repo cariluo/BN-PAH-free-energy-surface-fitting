@@ -3,13 +3,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
-from scipy.special import logsumexp
 
 from bn_pah_fes.config import Parameters
 from bn_pah_fes.data import load_data
 from bn_pah_fes.fitting import fit_free_energy
 from bn_pah_fes.kde import calculate_kde_surface
-from bn_pah_fes.polynomial import free_energy, polynomial_basis
+from bn_pah_fes.surfaces import calculate_surfaces
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -19,11 +18,7 @@ params = Parameters()
 N_SAMPLES = params.n_samples
 N_ACF = params.n_acf
 fit_padding_factor = params.fit_padding_factor
-plot_padding_factor = params.plot_padding_factor
-q0_padding_factor = params.q0_padding_factor
 n_grid = params.n_grid
-N_GRID = params.n_grid_surface
-N_Q0 = params.n_q0
 
 # Output directory
 RESULTS_DIR = Path("results")
@@ -83,11 +78,6 @@ plt.close()
 
 # Cubic polynomial fit
 fit_result = fit_free_energy(data, params)
-theta = fit_result.theta
-q_mean = fit_result.q_mean
-q_std = fit_result.q_std
-q_scaled = fit_result.q_scaled
-X = fit_result.design_matrix
 DeltaG_PBE = fit_result.delta_g_pbe
 
 output_data = np.column_stack([idx, q[:, 0], q[:, 1], q[:, 2], DeltaG_PBE])
@@ -99,68 +89,15 @@ np.savetxt(
 )
 
 # Reweighted 2D surfaces
-qS_min, qS_max = q[:, 1].min(), q[:, 1].max()
-qT_min, qT_max = q[:, 2].min(), q[:, 2].max()
-qS_pad = plot_padding_factor * (qS_max - qS_min)
-qT_pad = plot_padding_factor * (qT_max - qT_min)
-qS_grid = np.linspace(qS_min - qS_pad, qS_max, N_GRID)
-qT_grid = np.linspace(qT_min - qT_pad, qT_max, N_GRID)
-
-q0_min, q0_max = q[:, 0].min(), q[:, 0].max()
-q0_pad = q0_padding_factor * (q0_max - q0_min)
-q0_grid = np.linspace(q0_min - q0_pad, q0_max, N_Q0)
-dq0 = q0_grid[1] - q0_grid[0]
-
-QS, QT = np.meshgrid(qS_grid, qT_grid, indexing="ij")
-G0_surface = np.zeros_like(QS)
-
-for i in range(N_GRID):
-    for j in range(N_GRID):
-        points = np.column_stack([
-            q0_grid,
-            np.full(N_Q0, QS[i, j]),
-            np.full(N_Q0, QT[i, j]),
-        ])
-        points_scaled = (points - q_mean) / q_std
-        G_PBE = free_energy(theta, polynomial_basis(points_scaled))
-        exponent = -params.beta * (G_PBE + q0_grid)
-        log_integral = logsumexp(exponent) + np.log(dq0)
-        G0_surface[i, j] = -params.kBT * log_integral
-
-GS_surface = G0_surface + QS
-GT_surface = G0_surface + QT
-G0_min = np.min(G0_surface)
-G0_surface -= G0_min
-GS_surface -= G0_min
-GT_surface -= G0_min
-
-
-def calculate_G0(qS_values, qT_values):
-    """Calculate unshifted G0(qS, qT) by numerical integration over q0."""
-    qS_values = np.asarray(qS_values)
-    qT_values = np.asarray(qT_values)
-    if qS_values.shape != qT_values.shape:
-        raise ValueError("qS_values and qT_values must have the same shape.")
-    G0_values = np.empty(qS_values.size)
-    for index, (qS_value, qT_value) in enumerate(zip(qS_values.ravel(), qT_values.ravel())):
-        points = np.column_stack([
-            q0_grid,
-            np.full(N_Q0, qS_value),
-            np.full(N_Q0, qT_value),
-        ])
-        points_scaled = (points - q_mean) / q_std
-        G_PBE = free_energy(theta, polynomial_basis(points_scaled))
-        exponent = -params.beta * (G_PBE + q0_grid)
-        log_integral = logsumexp(exponent) + np.log(dq0)
-        G0_values[index] = -params.kBT * log_integral
-    return G0_values.reshape(qS_values.shape)
-
-G0_sampled = calculate_G0(q[:, 1], q[:, 2])
-GS_sampled = G0_sampled + q[:, 1]
-GT_sampled = G0_sampled + q[:, 2]
-G0_sampled -= G0_min
-GS_sampled -= G0_min
-GT_sampled -= G0_min
+surface_result = calculate_surfaces(fit_result, q, params)
+QS = surface_result.QS
+QT = surface_result.QT
+G0_surface = surface_result.G0_surface
+GS_surface = surface_result.GS_surface
+GT_surface = surface_result.GT_surface
+G0_sampled = surface_result.G0_sampled
+GS_sampled = surface_result.GS_sampled
+GT_sampled = surface_result.GT_sampled
 
 # Plotting
 def plot_3d_free_energy_surface(QS, QT, surface_data, q, sampled, filename, zlabel):
