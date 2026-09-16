@@ -6,7 +6,7 @@ from scipy.special import logsumexp
 
 from .config import Parameters
 from .fitting import FitResult
-from .polynomial import free_energy, polynomial_basis, polynomial_gradient
+from .polynomial import free_energy, polynomial, polynomial_basis, polynomial_gradient
 
 
 @dataclass(frozen=True)
