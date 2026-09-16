@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Generated analysis output
+*.png
+*.pdf
+*.txt
+
+# Local/editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Large simulation data
+*.out
+*.log
+*.chk
+*.h5
+*.hdf5
