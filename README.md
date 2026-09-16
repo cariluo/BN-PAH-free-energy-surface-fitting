@@ -47,13 +47,46 @@ The large data files are intentionally not included in the GitHub repository. Th
 
 ## Running
 
-From the repository root, run:
+After cloning the repository and installing the dependencies, make sure the terminal is currently inside the `BN-PAH-free-energy-surface-fitting` directory. You can check your location with:
+
+```bash
+pwd
+```
+
+The directory should end with:
+
+```text
+BN-PAH-free-energy-surface-fitting
+```
+
+If you are not already there, change into the repository directory with:
+
+```bash
+cd /path/to/BN-PAH-free-energy-surface-fitting
+```
+
+Before running the analysis, confirm that the four input files are in the `data/` directory:
+
+```bash
+ls data/
+```
+
+You should see:
+
+```text
+PBE0_energies.txt
+qS_energies.txt
+qT_energies.txt
+S0_energies.txt
+```
+
+Then run the analysis from the repository directory with:
 
 ```bash
 python fit_free_energy.py
 ```
 
-The script reads the input files from `data/`. It produces diagnostic and surface files including:
+The script reads the input files from `data/` and writes the output files to the repository directory. It produces diagnostic and surface files including:
 
 ```text
 KDE.png
