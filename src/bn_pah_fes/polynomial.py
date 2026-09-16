@@ -34,9 +34,7 @@ def polynomial_gradient(theta: np.ndarray, q: np.ndarray) -> np.ndarray:
         np.zeros(len(q)), y * z,
     ])
     dy = np.column_stack([
-        np.zeros(len(q)),
-        np.zeros(len(q)),
-        np.ones(len(q)),
+        np.zeros(len(q)), np.zeros(len(q)), np.ones(len(q)),
         np.zeros(len(q)),
         np.zeros(len(q)), 2 * y, np.zeros(len(q)),
         x, np.zeros(len(q)), z,
@@ -45,8 +43,7 @@ def polynomial_gradient(theta: np.ndarray, q: np.ndarray) -> np.ndarray:
         np.zeros(len(q)), z**2, x * z,
     ])
     dz = np.column_stack([
-        np.zeros(len(q)),
-        np.zeros(len(q)), np.zeros(len(q)),
+        np.zeros(len(q)), np.zeros(len(q)), np.zeros(len(q)),
         np.ones(len(q)),
         np.zeros(len(q)), np.zeros(len(q)), 2 * z,
         np.zeros(len(q)), x, y,
@@ -55,7 +52,7 @@ def polynomial_gradient(theta: np.ndarray, q: np.ndarray) -> np.ndarray:
         2 * x * z, 2 * y * z, x * y,
     ])
     gradient_basis = np.stack([dx, dy, dz], axis=1)
-    return np.einsum("j,ijk->ik", theta, gradient_basis)
+    return np.einsum("j,ikj->ik", theta, gradient_basis)
 
 
 def free_energy(theta: np.ndarray, X: np.ndarray) -> np.ndarray:
