@@ -4,52 +4,33 @@ Analysis and fitting tools for constructing free-energy surfaces in the `(q_S, q
 
 ## Installation
 
-### 1. Clone the repository
+This project does **not** require a virtual environment. Install it into the Python or Conda environment you already use.
+
+### Clone the repository
 
 ```bash
 git clone https://github.com/cariluo/BN-PAH-free-energy-surface-fitting.git
 cd BN-PAH-free-energy-surface-fitting
 ```
 
-### 2. Create a virtual environment
-
-Using Python's built-in `venv`:
+### Install the project
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-On Windows PowerShell, activate it with:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-### 3. Install the project
-
-Install the package and its dependencies from `pyproject.toml`:
-
-```bash
-python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
-The project currently depends on NumPy, SciPy, and Matplotlib. The editable install (`-e`) is convenient during development because changes to the source files are immediately available without reinstalling.
+The project dependencies (NumPy, SciPy, and Matplotlib) are specified in `pyproject.toml` and will be installed automatically.
 
-### Conda alternative
-
-If you prefer Conda:
+If you use Conda, activate your existing environment first and then run the same command:
 
 ```bash
-conda create -n bn-pah-free-energy python=3.12
-conda activate bn-pah-free-energy
+conda activate YOUR_ENVIRONMENT
 python -m pip install -e .
 ```
+
+No new Conda environment or Python virtual environment is required.
 
 ### Verify the installation
-
-Run:
 
 ```bash
 python -c "import numpy, scipy, matplotlib; print('Installation successful')"
@@ -81,7 +62,7 @@ The script produces diagnostic and surface files including:
 ```text
 KDE.png
 coordinate_time_series.png
-DeltaG_PBE0.png
+DeltaG_PBE_n_grid_*.txt
 DeltaG0_contour.png
 DeltaGS_contour.png
 DeltaGT_contour.png
