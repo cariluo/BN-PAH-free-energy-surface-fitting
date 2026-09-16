@@ -144,14 +144,13 @@ def _surface_value_and_gradient(
     raise ValueError(f"Unknown surface: {surface}")
 
 
-def find_surface_minimum(
+def _find_surface_minimum(
     surface: str,
     fit_result: FitResult,
-    q: np.ndarray,
+    surface_result: SurfaceResult,
     params: Parameters,
 ) -> SurfaceMinimum:
-    """Find the continuous minimum of one fitted free-energy surface."""
-    surface_result = calculate_surfaces(fit_result, q, params)
+    """Find the continuous minimum using a precomputed surface grid."""
     surface_data = {
         "G0": surface_result.G0_surface,
         "GS": surface_result.GS_surface,
@@ -201,8 +200,11 @@ def find_surface_minima(
     params: Parameters,
 ) -> dict[str, SurfaceMinimum]:
     """Find the continuous minima of G0, GS, and GT."""
+    surface_result = calculate_surfaces(fit_result, q, params)
     return {
-        surface: find_surface_minimum(surface, fit_result, q, params)
+        surface: _find_surface_minimum(
+            surface, fit_result, surface_result, params
+        )
         for surface in ("G0", "GS", "GT")
     }
 
