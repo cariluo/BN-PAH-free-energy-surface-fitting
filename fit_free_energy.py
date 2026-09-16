@@ -3,6 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+from scipy.special import logsumexp
 
 from bn_pah_fes.config import Parameters
 from bn_pah_fes.data import load_data
@@ -123,7 +124,7 @@ for i in range(N_GRID):
         points_scaled = (points - q_mean) / q_std
         G_PBE = free_energy(theta, polynomial_basis(points_scaled))
         exponent = -params.beta * (G_PBE + q0_grid)
-        log_integral = np.log(np.exp(exponent).sum()) + np.log(dq0)
+        log_integral = logsumexp(exponent) + np.log(dq0)
         G0_surface[i, j] = -params.kBT * log_integral
 
 GS_surface = G0_surface + QS
@@ -150,7 +151,7 @@ def calculate_G0(qS_values, qT_values):
         points_scaled = (points - q_mean) / q_std
         G_PBE = free_energy(theta, polynomial_basis(points_scaled))
         exponent = -params.beta * (G_PBE + q0_grid)
-        log_integral = np.log(np.exp(exponent).sum()) + np.log(dq0)
+        log_integral = logsumexp(exponent) + np.log(dq0)
         G0_values[index] = -params.kBT * log_integral
     return G0_values.reshape(qS_values.shape)
 
