@@ -9,6 +9,7 @@ from scipy.special import logsumexp
 from bn_pah_fes.config import Parameters
 from bn_pah_fes.data import load_data
 from bn_pah_fes.kde import calculate_kde_surface
+from bn_pah_fes.polynomial import free_energy, polynomial_basis
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -87,28 +88,11 @@ plt.tight_layout()
 plt.savefig(RESULTS_DIR / "KDE.png", dpi=300)
 plt.close()
 
-# Cubic polynomial basis
-def polynomial_basis(q):
-    """Return the 20-term cubic polynomial basis."""
-    x, y, z = q[:, 0], q[:, 1], q[:, 2]
-    return np.column_stack([
-        np.ones(len(q)), x, y, z,
-        x**2, y**2, z**2, x * y, x * z, y * z,
-        x**3, y**3, z**3,
-        x**2 * y, x**2 * z, y**2 * x, y**2 * z,
-        z**2 * x, z**2 * y, x * y * z,
-    ])
-
+# Cubic polynomial fit
 q_mean = np.mean(q, axis=0)
 q_std = np.std(q, axis=0)
 q_scaled = (q - q_mean) / q_std
 X = polynomial_basis(q_scaled)
-
-def polynomial(theta, X):
-    return X @ theta
-
-def free_energy(theta, X):
-    return polynomial(theta, X) ** 2
 
 # 3D integration grid for likelihood
 q_min = np.min(q_scaled, axis=0)
