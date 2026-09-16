@@ -64,6 +64,9 @@ QT = surface_result.QT
 G0_surface = surface_result.G0_surface
 GS_surface = surface_result.GS_surface
 GT_surface = surface_result.GT_surface
+
+# Surface values evaluated at the subsampled trajectory points.
+# These are used to overlay the sampled configurations on the 2D/3D surfaces.
 G0_sampled = surface_result.G0_sampled
 GS_sampled = surface_result.GS_sampled
 GT_sampled = surface_result.GT_sampled
