@@ -4,8 +4,6 @@ Analysis and fitting tools for constructing free-energy surfaces in the `(q_S, q
 
 ## Installation
 
-This project does **not** require a virtual environment. Install it into the Python or Conda environment you already use.
-
 ### Clone the repository
 
 ```bash
