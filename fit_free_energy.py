@@ -12,7 +12,7 @@ from bn_pah_fes.plotting import (
     plot_delta_g_contour,
     plot_kde_surface,
 )
-from bn_pah_fes.surfaces import calculate_surfaces
+from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 
 
 # Parameters
@@ -70,6 +70,16 @@ GT_surface = surface_result.GT_surface
 G0_sampled = surface_result.G0_sampled
 GS_sampled = surface_result.GS_sampled
 GT_sampled = surface_result.GT_sampled
+
+# Find continuous minima of the fitted surfaces.
+minima = find_surface_minima(fit_result, q, params, surface_result)
+for surface, minimum in minima.items():
+    print(
+        f"{surface} minimum: "
+        f"qS = {minimum.qS:.8f} Ha, "
+        f"qT = {minimum.qT:.8f} Ha, "
+        f"G = {minimum.value:.8f} Ha"
+    )
 
 # Plot surfaces
 plot_delta_g_contour(
