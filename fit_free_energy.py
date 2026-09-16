@@ -8,9 +8,7 @@ from scipy.interpolate import RegularGridInterpolator
 
 plt.rcParams["font.family"] = "Times New Roman"
 
-# ============================================================
 # Parameters
-# ============================================================
 T = 300.0
 kB = 3.166811563e-6  # Hartree / K
 kBT = kB * T
@@ -25,16 +23,14 @@ n_grid = 50
 N_GRID = 150
 N_Q0 = 150
 
-# ============================================================
 # Read energies
-# ============================================================
-E_PBE_all = np.loadtxt("PBE0_energies.txt")[:N_SAMPLES]
+E_PBE_all = np.loadtxt("data/PBE0_energies.txt")[:N_SAMPLES]
 E_PBE = E_PBE_all[::N_ACF]
-qS_all = np.loadtxt("qS_energies.txt")[:N_SAMPLES]
+qS_all = np.loadtxt("data/qS_energies.txt")[:N_SAMPLES]
 qS = qS_all[::N_ACF]
-qT_all = np.loadtxt("qT_energies.txt")[:N_SAMPLES]
+qT_all = np.loadtxt("data/qT_energies.txt")[:N_SAMPLES]
 qT = qT_all[::N_ACF]
-S0_all = np.loadtxt("S0_energies.txt")[:N_SAMPLES]
+S0_all = np.loadtxt("data/S0_energies.txt")[:N_SAMPLES]
 S0 = S0_all[::N_ACF]
 
 q0_all = S0_all - E_PBE_all
@@ -66,9 +62,7 @@ plt.close()
 
 q = np.column_stack((q0, qS, qT))
 
-# ============================================================
 # Weighted empirical 2D free-energy surface
-# ============================================================
 data = np.vstack([qS, qT])
 weights = np.exp(-beta * q0)
 weights /= weights.sum()
@@ -102,9 +96,7 @@ plt.tight_layout()
 plt.savefig("KDE.png", dpi=300)
 plt.close()
 
-# ============================================================
 # Cubic polynomial basis
-# ============================================================
 def polynomial_basis(q):
     """Return the 20-term cubic polynomial basis."""
     x, y, z = q[:, 0], q[:, 1], q[:, 2]
@@ -121,17 +113,13 @@ q_std = np.std(q, axis=0)
 q_scaled = (q - q_mean) / q_std
 X = polynomial_basis(q_scaled)
 
-
 def polynomial(theta, X):
     return X @ theta
-
 
 def free_energy(theta, X):
     return polynomial(theta, X) ** 2
 
-# ============================================================
-# 3D integration grid for the likelihood
-# ============================================================
+# 3D integration grid for likelihood
 q_min = np.min(q_scaled, axis=0)
 q_max = np.max(q_scaled, axis=0)
 padding = fit_padding_factor * (q_max - q_min)
@@ -157,7 +145,6 @@ W1, W2, W3 = np.meshgrid(w1, w2, w3, indexing="ij")
 integration_weights = (W1 * W2 * W3).ravel()
 log_integration_weights = np.log(integration_weights)
 
-
 def negative_log_likelihood(theta):
     G_data = free_energy(theta, X)
     G_grid = free_energy(theta, X_integration)
@@ -168,9 +155,7 @@ def negative_log_likelihood(theta):
         return np.inf
     return beta * np.sum(G_data) + len(q_scaled) * log_Z
 
-# ============================================================
 # Fit
-# ============================================================
 theta0 = np.zeros(20)
 theta0[0] = np.sqrt(kBT)
 
@@ -201,9 +186,7 @@ np.savetxt(
     header="index q0 qS qT DeltaG_PBE_Hartree",
 )
 
-# ============================================================
 # Reweighted 2D surfaces
-# ============================================================
 qS_min, qS_max = q[:, 1].min(), q[:, 1].max()
 qT_min, qT_max = q[:, 2].min(), q[:, 2].max()
 qS_pad = plot_padding_factor * (qS_max - qS_min)
@@ -239,7 +222,6 @@ G0_surface -= G0_min
 GS_surface -= G0_min
 GT_surface -= G0_min
 
-
 def calculate_G0(qS_values, qT_values):
     """Calculate unshifted G0(qS, qT) by numerical integration over q0."""
     qS_values = np.asarray(qS_values)
@@ -267,9 +249,7 @@ G0_sampled -= G0_min
 GS_sampled -= G0_min
 GT_sampled -= G0_min
 
-# ============================================================
 # Plotting
-# ============================================================
 def plot_3d_free_energy_surface(QS, QT, surface_data, q, sampled, filename, zlabel):
     fig = plt.figure(figsize=(9, 7))
     ax = fig.add_subplot(111, projection="3d")
@@ -285,7 +265,6 @@ def plot_3d_free_energy_surface(QS, QT, surface_data, q, sampled, filename, zlab
     plt.savefig(filename, dpi=300, bbox_inches="tight")
     plt.close()
     print(f"Saved {filename}")
-
 
 def plot_delta_g_contour(QS, QT, surface_data, q, filename, cbarlabel):
     plt.figure(figsize=(8, 6))
