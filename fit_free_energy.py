@@ -3,13 +3,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
-from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import minimize
 from scipy.special import logsumexp
-from scipy.stats import gaussian_kde
 
 from bn_pah_fes.config import Parameters
 from bn_pah_fes.data import load_data
+from bn_pah_fes.kde import calculate_kde_surface
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -67,23 +66,11 @@ plt.savefig(RESULTS_DIR / "coordinate_time_series.png", dpi=300)
 plt.close()
 
 # Weighted empirical 2D free-energy surface
-data_kde = np.vstack([qS, qT])
-weights = np.exp(-beta * q0)
-weights /= weights.sum()
-kde = gaussian_kde(data_kde, weights=weights)
-
-qS_grid = np.linspace(qS.min(), qS.max(), N_GRID)
-qT_grid = np.linspace(qT.min(), qT.max(), N_GRID)
-QS, QT = np.meshgrid(qS_grid, qT_grid)
-positions = np.vstack([QS.ravel(), QT.ravel()])
-P = kde(positions).reshape(QS.shape)
-G_empirical = -kBT * np.log(P)
-G_empirical -= G_empirical.min()
-
-G_interpolator = RegularGridInterpolator(
-    (qT_grid, qS_grid), G_empirical, bounds_error=False, fill_value=None
-)
-G_sampled = G_interpolator(np.column_stack([qT, qS]))
+kde_result = calculate_kde_surface(data, params)
+QS = kde_result.QS
+QT = kde_result.QT
+G_empirical = kde_result.free_energy
+G_sampled = kde_result.sampled_free_energy
 
 print("G range:", G_empirical.min(), G_empirical.max())
 print("G_sampled range:", G_sampled.min(), G_sampled.max())
