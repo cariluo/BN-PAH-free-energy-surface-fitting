@@ -25,28 +25,35 @@ The project dependencies (NumPy, SciPy, and Matplotlib) are specified in `pyproj
 python -c "import numpy, scipy, matplotlib; print('Installation successful')"
 ```
 
-## Input files
+## Data
 
-The fitting script expects these files in the working directory:
+Create a `data/` directory in the repository for the input energy files:
 
 ```text
-PBE0_energies.txt
-qS_energies.txt
-qT_energies.txt
-S0_energies.txt
+BN-PAH-free-energy-surface-fitting/
+├── fit_free_energy.py
+├── pyproject.toml
+├── README.md
+└── data/
+    ├── PBE0_energies.txt
+    ├── qS_energies.txt
+    ├── qT_energies.txt
+    └── S0_energies.txt
 ```
 
 Each file should contain one energy value per trajectory step, with matching lengths.
 
+The large data files are intentionally not included in the GitHub repository. Place the files locally in `data/` before running the analysis.
+
 ## Running
 
-After installation, place the four input files in the directory from which you will run the analysis and execute:
+From the repository root, run:
 
 ```bash
 python fit_free_energy.py
 ```
 
-The script produces diagnostic and surface files including:
+The script expects the input files in `data/`. It produces diagnostic and surface files including:
 
 ```text
 KDE.png
