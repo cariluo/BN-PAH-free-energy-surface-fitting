@@ -1,54 +1,55 @@
-import numpy as np
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import minimize
 from scipy.special import logsumexp
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 from scipy.stats import gaussian_kde
-from scipy.interpolate import RegularGridInterpolator
+
+from bn_pah_fes.config import Parameters
+from bn_pah_fes.data import load_data
 
 plt.rcParams["font.family"] = "Times New Roman"
 
-# Parameters
-T = 300.0
-kB = 3.166811563e-6  # Hartree / K
-kBT = kB * T
-beta = 1.0 / kBT
 
-N_SAMPLES = 13000
-N_ACF = 80
-fit_padding_factor = 0.0
-plot_padding_factor = 0.5
-q0_padding_factor = 0.0
-n_grid = 50
-N_GRID = 150
-N_Q0 = 150
+# Parameters
+params = Parameters()
+T = params.temperature
+kBT = params.kBT
+beta = params.beta
+N_SAMPLES = params.n_samples
+N_ACF = params.n_acf
+fit_padding_factor = params.fit_padding_factor
+plot_padding_factor = params.plot_padding_factor
+q0_padding_factor = params.q0_padding_factor
+n_grid = params.n_grid
+N_GRID = params.n_grid_surface
+N_Q0 = params.n_q0
 
 # Output directory
 RESULTS_DIR = Path("results")
 RESULTS_DIR.mkdir(exist_ok=True)
 
 # Read energies
-E_PBE_all = np.loadtxt("data/PBE0_energies.txt")[:N_SAMPLES]
-E_PBE = E_PBE_all[::N_ACF]
-qS_all = np.loadtxt("data/qS_energies.txt")[:N_SAMPLES]
-qS = qS_all[::N_ACF]
-qT_all = np.loadtxt("data/qT_energies.txt")[:N_SAMPLES]
-qT = qT_all[::N_ACF]
-S0_all = np.loadtxt("data/S0_energies.txt")[:N_SAMPLES]
-S0 = S0_all[::N_ACF]
+data = load_data(Path("data"), N_SAMPLES, N_ACF)
+E_PBE_all = data.E_pbe_all
+E_PBE = data.E_pbe
+qS_all = data.qS_all
+qS = data.qS
+qT_all = data.qT_all
+qT = data.qT
+S0_all = data.S0_all
+S0 = data.S0
+q0_all = data.q0_all
+q0 = data.q0
+idx_all = data.idx_all
+idx = data.idx
+q = data.q
 
-q0_all = S0_all - E_PBE_all
-q0 = S0 - E_PBE
-
-if not (len(E_PBE) == len(qS) == len(qT) == len(S0)):
-    raise ValueError("Input files do not contain the same number of entries.")
-
-samples_in_fit = len(q0)
+samples_in_fit = data.samples_in_fit
 print(f"Using {samples_in_fit} samples in the fitting")
-
-idx_all = np.arange(N_SAMPLES)
-idx = idx_all[::N_ACF]
 
 fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
 axes[0].scatter(idx_all, q0_all, s=2, label="All")
@@ -65,13 +66,11 @@ plt.tight_layout()
 plt.savefig(RESULTS_DIR / "coordinate_time_series.png", dpi=300)
 plt.close()
 
-q = np.column_stack((q0, qS, qT))
-
 # Weighted empirical 2D free-energy surface
-data = np.vstack([qS, qT])
+data_kde = np.vstack([qS, qT])
 weights = np.exp(-beta * q0)
 weights /= weights.sum()
-kde = gaussian_kde(data, weights=weights)
+kde = gaussian_kde(data_kde, weights=weights)
 
 qS_grid = np.linspace(qS.min(), qS.max(), N_GRID)
 qT_grid = np.linspace(qT.min(), qT.max(), N_GRID)
