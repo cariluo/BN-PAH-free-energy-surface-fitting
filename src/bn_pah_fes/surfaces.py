@@ -198,9 +198,12 @@ def find_surface_minima(
     fit_result: FitResult,
     q: np.ndarray,
     params: Parameters,
+    surface_result: SurfaceResult | None = None,
 ) -> dict[str, SurfaceMinimum]:
     """Find the continuous minima of G0, GS, and GT."""
-    surface_result = calculate_surfaces(fit_result, q, params)
+    if surface_result is None:
+        surface_result = calculate_surfaces(fit_result, q, params)
+
     return {
         surface: _find_surface_minimum(
             surface, fit_result, surface_result, params
