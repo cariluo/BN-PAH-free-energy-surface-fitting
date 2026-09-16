@@ -183,7 +183,7 @@ def _find_surface_minimum(
         initial_guess,
         jac=gradient,
         method="L-BFGS-B",
-        bounds=bounds,
+        #bounds=bounds,
     )
 
     return SurfaceMinimum(
