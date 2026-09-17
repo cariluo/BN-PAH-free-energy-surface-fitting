@@ -1,5 +1,7 @@
 from dataclasses import replace
 from pathlib import Path
+import numpy as np
+import pandas as pd
 
 from bn_pah_fes.config import Parameters
 from bn_pah_fes.data import load_data
@@ -8,7 +10,7 @@ from bn_pah_fes.plotting import (
     plot_3d_free_energy_surface,
     plot_delta_g_contour,
 )
-from bn_pah_fes.surfaces import calculate_surfaces
+from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 
 
 Q0_PADDING_FACTORS = [0.0, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0]
@@ -32,6 +34,10 @@ def main() -> None:
     print("Fitting MLE with fit_padding_factor = 0.0")
     fit_result = fit_free_energy(data, params)
 
+    previous_surface = None
+    previous_minimum = None
+    convergence_results = []
+
     for q0_padding_factor in Q0_PADDING_FACTORS:
         surface_params = replace(
             params,
@@ -48,6 +54,49 @@ def main() -> None:
             data.q,
             surface_params,
         )
+
+                # Find the minimum of the current G0 surface.
+        minima = find_surface_minima(surface_result)
+
+        current_minimum = np.array([
+            minima["G0"][0],
+            minima["G0"][1],
+        ])
+
+        # Compare against the previous q0-padding value.
+        if previous_surface is None:
+            max_abs_change = np.nan
+            rms_change = np.nan
+            minimum_location_change = np.nan
+        else:
+            surface_difference = (
+                surface_result.G0_surface - previous_surface
+            )
+
+            # Metric 1: maximum absolute change in G0.
+            max_abs_change = np.max(np.abs(surface_difference))
+
+            # Metric 2: RMS change in G0.
+            rms_change = np.sqrt(
+                np.mean(surface_difference**2)
+            )
+
+            # Metric 3: Euclidean distance between surface minima.
+            minimum_location_change = np.linalg.norm(
+                current_minimum - previous_minimum
+            )
+
+        convergence_results.append({
+            "q0_padding_factor": q0_padding_factor,
+            "max_abs_change_Ha": max_abs_change,
+            "rms_change_Ha": rms_change,
+            "minimum_location_change": minimum_location_change,
+            "minimum_qS": current_minimum[0],
+            "minimum_qT": current_minimum[1],
+        })
+
+        previous_surface = surface_result.G0_surface.copy()
+        previous_minimum = current_minimum.copy()
 
         plot_delta_g_contour(
             surface_result.QS,
@@ -73,7 +122,18 @@ def main() -> None:
         )
 
     print("\nq0-padding plots complete.")
+    
+    convergence_df = pd.DataFrame(convergence_results)
 
+    convergence_df.to_csv(
+        RESULTS_DIR / "q0_padding_convergence.csv",
+        index=False,
+    )
+
+    print(
+        "\nSaved convergence metrics to "
+        f"{RESULTS_DIR / 'q0_padding_convergence.csv'}"
+    )
 
 if __name__ == "__main__":
     main()
