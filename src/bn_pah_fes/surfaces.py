@@ -6,7 +6,15 @@ from scipy.special import logsumexp
 
 from .config import Parameters
 from .fitting import FitResult
-from .polynomial import free_energy, polynomial, polynomial_basis, polynomial_gradient
+from .polynomial import (
+    free_energy,
+    harmonic_free_energy,
+    harmonic_gradient,
+    polynomial,
+    polynomial_basis,
+    polynomial_gradient,
+    harmonic_basis,
+)
 
 
 @dataclass(frozen=True)
@@ -37,6 +45,15 @@ class SurfaceMinimum:
     success: bool
 
 
+def _model_functions(params: Parameters):
+    """Return the basis, free-energy, and gradient functions for the model."""
+    if params.model == "squared_cubic":
+        return polynomial_basis, free_energy, polynomial_gradient, True
+    if params.model == "harmonic":
+        return harmonic_basis, harmonic_free_energy, harmonic_gradient, False
+    raise ValueError(f"Unknown free-energy model: {params.model}")
+
+
 def calculate_G0(
     qS_values: np.ndarray,
     qT_values: np.ndarray,
@@ -50,6 +67,7 @@ def calculate_G0(
     if qS_values.shape != qT_values.shape:
         raise ValueError("qS_values and qT_values must have the same shape.")
 
+    basis, evaluate_free_energy, _, _ = _model_functions(params)
     dq0 = q0_grid[1] - q0_grid[0]
     G0_values = np.empty(qS_values.size)
 
@@ -62,15 +80,16 @@ def calculate_G0(
             np.full(len(q0_grid), qT_value),
         ])
         points_scaled = (points - fit_result.q_mean) / fit_result.q_std
-        G_PBE = free_energy(
+        G_PBE = evaluate_free_energy(
             fit_result.theta,
-            polynomial_basis(points_scaled),
+            basis(points_scaled),
         )
         exponent = -params.beta * (G_PBE + q0_grid)
         log_integral = logsumexp(exponent) + np.log(dq0)
         G0_values[index] = -params.kBT * log_integral
 
     return G0_values.reshape(qS_values.shape)
+
 
 def calculate_q0_integrand(
     qS_value: float,
@@ -80,6 +99,7 @@ def calculate_q0_integrand(
     params: Parameters,
 ) -> np.ndarray:
     """Calculate the q0 integrand used in the G0 numerical integration."""
+    basis, evaluate_free_energy, _, _ = _model_functions(params)
     points = np.column_stack([
         q0_grid,
         np.full(len(q0_grid), qS_value),
@@ -87,9 +107,9 @@ def calculate_q0_integrand(
     ])
     points_scaled = (points - fit_result.q_mean) / fit_result.q_std
 
-    G_PBE = free_energy(
+    G_PBE = evaluate_free_energy(
         fit_result.theta,
-        polynomial_basis(points_scaled),
+        basis(points_scaled),
     )
 
     exponent = -params.beta * (G_PBE + q0_grid)
@@ -98,6 +118,7 @@ def calculate_q0_integrand(
     integrand = np.exp(exponent - np.max(exponent))
 
     return integrand
+
 
 def calculate_G0_gradient(
     qS_values: np.ndarray,
@@ -112,6 +133,7 @@ def calculate_G0_gradient(
     if qS_values.shape != qT_values.shape:
         raise ValueError("qS_values and qT_values must have the same shape.")
 
+    basis, evaluate_free_energy, gradient_function, is_squared = _model_functions(params)
     gradients = np.empty((qS_values.size, 2))
 
     for index, (qS_value, qT_value) in enumerate(
@@ -125,14 +147,18 @@ def calculate_G0_gradient(
         points_scaled = (points - fit_result.q_mean) / fit_result.q_std
         polynomial_values = polynomial(
             fit_result.theta,
-            polynomial_basis(points_scaled),
+            basis(points_scaled),
         )
-        polynomial_grad = polynomial_gradient(fit_result.theta, points_scaled)
-        G_PBE_grad = 2 * polynomial_values[:, None] * polynomial_grad
+        polynomial_grad = gradient_function(fit_result.theta, points_scaled)
 
-        exponent = -params.beta * (
-            polynomial_values**2 + q0_grid
-        )
+        if is_squared:
+            G_PBE = polynomial_values**2
+            G_PBE_grad = 2 * polynomial_values[:, None] * polynomial_grad
+        else:
+            G_PBE = polynomial_values
+            G_PBE_grad = polynomial_grad
+
+        exponent = -params.beta * (G_PBE + q0_grid)
         log_weights = exponent - logsumexp(exponent)
         weights = np.exp(log_weights)
 
