@@ -55,12 +55,17 @@ def main() -> None:
             surface_params,
         )
 
-        # Find the minimum of the current G0 surface.
-        minima = find_surface_minima(surface_result)
+        # Find the continuous minimum of the current G0 surface.
+        minima = find_surface_minima(
+            fit_result,
+            data.q,
+            surface_params,
+            surface_result,
+        )
 
         current_minimum = np.array([
-            minima["G0"][0],
-            minima["G0"][1],
+            minima["G0"].qS,
+            minima["G0"].qT,
         ])
 
         # Compare against the previous q0-padding value.
