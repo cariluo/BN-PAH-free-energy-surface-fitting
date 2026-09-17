@@ -55,7 +55,7 @@ def main() -> None:
             surface_params,
         )
 
-                # Find the minimum of the current G0 surface.
+        # Find the minimum of the current G0 surface.
         minima = find_surface_minima(surface_result)
 
         current_minimum = np.array([
