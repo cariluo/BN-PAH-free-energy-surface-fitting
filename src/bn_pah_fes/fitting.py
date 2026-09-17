@@ -72,15 +72,26 @@ def fit_free_energy(data: EnergyData, params: Parameters) -> FitResult:
     )
 
     def negative_log_likelihood(theta):
+        """Evaluate the dimensionless negative log-likelihood for ``theta``."""
+        # Evaluate the fitted free energy at the sampled configurations and
+        # at every point on the integration grid used to normalize the model.
         G_data = free_energy(theta, X)
         G_grid = free_energy(theta, X_integration)
         if not np.all(np.isfinite(G_data)) or not np.all(np.isfinite(G_grid)):
             return np.inf
+
+        # Compute log(Z), where Z = integral exp(-beta * G(q)) dq.
+        # logsumexp keeps this normalization numerically stable when the
+        # Boltzmann factors become very small.
         log_Z = logsumexp(
             -params.beta * G_grid + log_integration_weights
         )
         if not np.isfinite(log_Z):
             return np.inf
+
+        # Negative log-likelihood:
+        #   beta * sum_i G(q_i) + N * log(Z)
+        # The returned value is dimensionless; it is not a free energy in Ha.
         return params.beta * np.sum(G_data) + len(q_scaled) * log_Z
 
     theta0 = np.zeros(20)
