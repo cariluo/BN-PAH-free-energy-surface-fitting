@@ -10,7 +10,7 @@ class Parameters:
     n_samples: int = 13000
     n_acf: int = 80
     fit_padding_factor: float = 0.0
-    plot_padding_factor: float = 0.5
+    plot_padding_factor: float = 0.0
     q0_padding_factor: float = 0.0
     n_grid: int = 50
     n_grid_surface: int = 150
