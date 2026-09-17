@@ -1,22 +1,22 @@
-import csv
 from dataclasses import replace
 from pathlib import Path
-
-import numpy as np
 
 from bn_pah_fes.config import Parameters
 from bn_pah_fes.data import load_data
 from bn_pah_fes.fitting import fit_free_energy
+from bn_pah_fes.plotting import (
+    plot_3d_free_energy_surface,
+    plot_delta_g_contour,
+)
 from bn_pah_fes.surfaces import calculate_surfaces
 
 
 Q0_PADDING_FACTORS = [0.0, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0]
 RESULTS_DIR = Path("results")
-SUMMARY_FILE = RESULTS_DIR / "q0_padding_summary.csv"
 
 
 def main() -> None:
-    """Test convergence of G0 with respect to q0 integration padding."""
+    """Save G0 plots for a series of q0 integration paddings."""
     base_params = Parameters()
     params = replace(base_params, fit_padding_factor=0.0)
 
@@ -32,57 +32,47 @@ def main() -> None:
     print("Fitting MLE with fit_padding_factor = 0.0")
     fit_result = fit_free_energy(data, params)
 
-    surfaces = []
     for q0_padding_factor in Q0_PADDING_FACTORS:
         surface_params = replace(
             params,
             q0_padding_factor=q0_padding_factor,
         )
-        print(f"Calculating G0 for q0_padding_factor = {q0_padding_factor:g}")
+        run_dir = RESULTS_DIR / f"q0_padding_{q0_padding_factor:g}"
+        run_dir.mkdir(parents=True, exist_ok=True)
+
+        print(f"\nq0_padding_factor = {q0_padding_factor:g}")
+        print(f"Results directory: {run_dir}")
+
         surface_result = calculate_surfaces(
             fit_result,
             data.q,
             surface_params,
         )
-        surfaces.append(surface_result.G0_surface)
 
-    reference_surface = surfaces[-1]
-    rows = []
-
-    previous_surface = None
-    for q0_padding_factor, surface in zip(Q0_PADDING_FACTORS, surfaces):
-        max_change_from_previous = np.nan
-        if previous_surface is not None:
-            max_change_from_previous = float(
-                np.max(np.abs(surface - previous_surface))
-            )
-
-        max_change_from_reference = float(
-            np.max(np.abs(surface - reference_surface))
+        plot_delta_g_contour(
+            surface_result.QS,
+            surface_result.QT,
+            surface_result.G0_surface,
+            data.q,
+            "DeltaG0_contour.png",
+            r"$\Delta G_0$ (Ha)",
+            run_dir,
+            data.samples_in_fit,
         )
 
-        rows.append(
-            {
-                "q0_padding_factor": q0_padding_factor,
-                "max_change_from_previous_Ha": max_change_from_previous,
-                "max_change_from_reference_Ha": max_change_from_reference,
-            }
+        plot_3d_free_energy_surface(
+            surface_result.QS,
+            surface_result.QT,
+            surface_result.G0_surface,
+            data.q,
+            surface_result.G0_sampled,
+            "DeltaG0_surface.png",
+            r"$\Delta G_0(q_S,q_T)$ (Ha)",
+            run_dir,
+            data.samples_in_fit,
         )
-        previous_surface = surface
 
-    with SUMMARY_FILE.open("w", newline="") as summary_file:
-        writer = csv.DictWriter(
-            summary_file,
-            fieldnames=[
-                "q0_padding_factor",
-                "max_change_from_previous_Ha",
-                "max_change_from_reference_Ha",
-            ],
-        )
-        writer.writeheader()
-        writer.writerows(rows)
-
-    print(f"\nSummary written to {SUMMARY_FILE}")
+    print("\nq0-padding plots complete.")
 
 
 if __name__ == "__main__":
