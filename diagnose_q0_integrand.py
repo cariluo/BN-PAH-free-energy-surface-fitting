@@ -7,7 +7,7 @@ import numpy as np
 from bn_pah_fes.config import Parameters
 from bn_pah_fes.data import load_data
 from bn_pah_fes.fitting import fit_free_energy
-from bn_pah_fes.surfaces import calculate_q0_integrand
+from bn_pah_fes.surfaces import calculate_q0_integrand, calculate_surfaces
 
 
 Q0_PADDING_FACTORS = [0.0, 0.1, 0.5, 1.0, 2.0]
