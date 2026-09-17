@@ -72,6 +72,32 @@ def calculate_G0(
 
     return G0_values.reshape(qS_values.shape)
 
+def calculate_q0_integrand(
+    qS_value: float,
+    qT_value: float,
+    q0_grid: np.ndarray,
+    fit_result: FitResult,
+    params: Parameters,
+) -> np.ndarray:
+    """Calculate the q0 integrand used in the G0 numerical integration."""
+    points = np.column_stack([
+        q0_grid,
+        np.full(len(q0_grid), qS_value),
+        np.full(len(q0_grid), qT_value),
+    ])
+    points_scaled = (points - fit_result.q_mean) / fit_result.q_std
+
+    G_PBE = free_energy(
+        fit_result.theta,
+        polynomial_basis(points_scaled),
+    )
+
+    exponent = -params.beta * (G_PBE + q0_grid)
+
+    # Normalize to the maximum to avoid numerical underflow.
+    integrand = np.exp(exponent - np.max(exponent))
+
+    return integrand
 
 def calculate_G0_gradient(
     qS_values: np.ndarray,
