@@ -16,7 +16,7 @@ from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 
 
 # Parameters
-params = Parameters()
+params = Parameters(model="harmonic")
 N_SAMPLES = params.n_samples
 N_ACF = params.n_acf
 fit_padding_factor = params.fit_padding_factor
