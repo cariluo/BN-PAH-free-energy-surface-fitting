@@ -64,6 +64,26 @@ def polynomial_gradient(theta: np.ndarray, q: np.ndarray) -> np.ndarray:
     return np.einsum("j,ikj->ik", theta, gradient_basis)
 
 
+def harmonic_gradient(theta: np.ndarray, q: np.ndarray) -> np.ndarray:
+    """Evaluate the gradient of the quadratic polynomial with respect to q."""
+    x, y, z = q[:, 0], q[:, 1], q[:, 2]
+
+    dx = np.column_stack([
+        np.zeros(len(q)), np.ones(len(q)), np.zeros(len(q)), np.zeros(len(q)),
+        2 * x, np.zeros(len(q)), np.zeros(len(q)), y, z, np.zeros(len(q)),
+    ])
+    dy = np.column_stack([
+        np.zeros(len(q)), np.zeros(len(q)), np.ones(len(q)), np.zeros(len(q)),
+        np.zeros(len(q)), 2 * y, np.zeros(len(q)), x, np.zeros(len(q)), z,
+    ])
+    dz = np.column_stack([
+        np.zeros(len(q)), np.zeros(len(q)), np.zeros(len(q)), np.ones(len(q)),
+        np.zeros(len(q)), np.zeros(len(q)), 2 * z, np.zeros(len(q)), x, y,
+    ])
+    gradient_basis = np.stack([dx, dy, dz], axis=1)
+    return np.einsum("j,ikj->ik", theta, gradient_basis)
+
+
 def free_energy(theta: np.ndarray, X: np.ndarray) -> np.ndarray:
     """Evaluate the squared polynomial free-energy model."""
     return polynomial(theta, X) ** 2
