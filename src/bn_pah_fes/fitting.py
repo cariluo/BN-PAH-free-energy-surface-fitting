@@ -6,7 +6,7 @@ from scipy.special import logsumexp
 
 from .config import Parameters
 from .data import EnergyData
-from .polynomial import free_energy, polynomial_basis
+from .polynomial import harmonic_basis, harmonic_free_energy, free_energy, polynomial_basis
 
 
 @dataclass(frozen=True)
@@ -50,7 +50,12 @@ def _integration_grid(q_scaled: np.ndarray, params: Parameters):
     q_integration = np.column_stack(
         [Q1.ravel(), Q2.ravel(), Q3.ravel()]
     )
-    X_integration = polynomial_basis(q_integration)
+    if params.model == "squared_cubic":
+        X_integration = polynomial_basis(q_integration)
+    elif params.model == "harmonic":
+        X_integration = harmonic_basis(q_integration)
+    else:
+        raise ValueError(f"Unknown free-energy model: {params.model}")
 
     W1, W2, W3 = np.meshgrid(w1, w2, w3, indexing="ij")
     integration_weights = (W1 * W2 * W3).ravel()
@@ -60,12 +65,22 @@ def _integration_grid(q_scaled: np.ndarray, params: Parameters):
 
 
 def fit_free_energy(data: EnergyData, params: Parameters) -> FitResult:
-    """Fit the cubic squared-polynomial free-energy model."""
+    """Fit the selected free-energy model."""
     q = data.q
     q_mean = np.mean(q, axis=0)
     q_std = np.std(q, axis=0)
     q_scaled = (q - q_mean) / q_std
-    X = polynomial_basis(q_scaled)
+
+    if params.model == "squared_cubic":
+        X = polynomial_basis(q_scaled)
+        evaluate_free_energy = free_energy
+        n_parameters = 20
+    elif params.model == "harmonic":
+        X = harmonic_basis(q_scaled)
+        evaluate_free_energy = harmonic_free_energy
+        n_parameters = 10
+    else:
+        raise ValueError(f"Unknown free-energy model: {params.model}")
 
     X_integration, log_integration_weights = _integration_grid(
         q_scaled, params
@@ -75,8 +90,8 @@ def fit_free_energy(data: EnergyData, params: Parameters) -> FitResult:
         """Evaluate the dimensionless negative log-likelihood for ``theta``."""
         # Evaluate the fitted free energy at the sampled configurations and
         # at every point on the integration grid used to normalize the model.
-        G_data = free_energy(theta, X)
-        G_grid = free_energy(theta, X_integration)
+        G_data = evaluate_free_energy(theta, X)
+        G_grid = evaluate_free_energy(theta, X_integration)
         if not np.all(np.isfinite(G_data)) or not np.all(np.isfinite(G_grid)):
             return np.inf
 
@@ -94,7 +109,7 @@ def fit_free_energy(data: EnergyData, params: Parameters) -> FitResult:
         # The returned value is dimensionless; it is not a free energy in Ha.
         return params.beta * np.sum(G_data) + len(q_scaled) * log_Z
 
-    theta0 = np.zeros(20)
+    theta0 = np.zeros(n_parameters)
     theta0[0] = np.sqrt(params.kBT)
 
     print("Starting optimization...")
@@ -102,6 +117,7 @@ def fit_free_energy(data: EnergyData, params: Parameters) -> FitResult:
     print(f"Temperature:       {params.temperature:.2f} K")
     print(f"kBT:               {params.kBT:.8e} Ha")
     print(f"beta:              {params.beta:.8e} Ha^-1")
+    print(f"Free-energy model: {params.model}")
 
     result = minimize(
         negative_log_likelihood,
@@ -114,7 +130,7 @@ def fit_free_energy(data: EnergyData, params: Parameters) -> FitResult:
         print("WARNING: optimization did not fully converge.")
 
     theta = result.x
-    delta_g_pbe = free_energy(theta, X)
+    delta_g_pbe = evaluate_free_energy(theta, X)
 
     return FitResult(
         theta=theta,
