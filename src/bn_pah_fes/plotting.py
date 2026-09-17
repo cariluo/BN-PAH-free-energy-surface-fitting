@@ -85,14 +85,13 @@ def plot_3d_free_energy_surface(
     """Plot a 3D free-energy surface and sampled trajectory points."""
     fig = plt.figure(figsize=(9, 7))
     ax = fig.add_subplot(111, projection="3d")
+    ax.view_init(elev=30, azim=-60)
     surface = ax.plot_surface(
         QS,
         QT,
         surface_data,
         cmap="viridis",
         alpha=0.8,
-        vmin=0.0,
-        vmax=0.65,
     )
     ax.scatter(
         q[:, 1],
