@@ -111,7 +111,7 @@ def plot_3d_free_energy_surface(
         ax=ax,
         shrink=0.7,
         pad=0.1,
-        ticks=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+        #ticks=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
     )
     cbar.set_label(zlabel, fontsize=20)
     plt.tight_layout()
