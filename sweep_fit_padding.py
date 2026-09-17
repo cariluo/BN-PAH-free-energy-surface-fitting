@@ -78,7 +78,7 @@ def main() -> None:
             surface_result.G0_surface,
             data.q,
             "DeltaG0_contour.png",
-            r"$\\Delta G_0$ (Ha)",
+            r"$\Delta G_0$ (Ha)",
             run_dir,
             data.samples_in_fit,
         )
@@ -88,7 +88,7 @@ def main() -> None:
             surface_result.GS_surface,
             data.q,
             "DeltaGS_contour.png",
-            r"$\\Delta G_S$ (Ha)",
+            r"$\Delta G_S$ (Ha)",
             run_dir,
             data.samples_in_fit,
         )
@@ -98,7 +98,7 @@ def main() -> None:
             surface_result.GT_surface,
             data.q,
             "DeltaGT_contour.png",
-            r"$\\Delta G_T$ (Ha)",
+            r"$\Delta G_T$ (Ha)",
             run_dir,
             data.samples_in_fit,
         )
@@ -110,7 +110,7 @@ def main() -> None:
             data.q,
             surface_result.G0_sampled,
             "DeltaG0_surface.png",
-            r"$\\Delta G_0(q_S,q_T)$ (Ha)",
+            r"$\Delta G_0(q_S,q_T)$ (Ha)",
             run_dir,
             data.samples_in_fit,
         )
@@ -121,7 +121,7 @@ def main() -> None:
             data.q,
             surface_result.GS_sampled,
             "DeltaGS_surface.png",
-            r"$\\Delta G_S(q_S,q_T)$ (Ha)",
+            r"$\Delta G_S(q_S,q_T)$ (Ha)",
             run_dir,
             data.samples_in_fit,
         )
@@ -132,7 +132,7 @@ def main() -> None:
             data.q,
             surface_result.GT_sampled,
             "DeltaGT_surface.png",
-            r"$\\Delta G_T(q_S,q_T)$ (Ha)",
+            r"$\Delta G_T(q_S,q_T)$ (Ha)",
             run_dir,
             data.samples_in_fit,
         )
