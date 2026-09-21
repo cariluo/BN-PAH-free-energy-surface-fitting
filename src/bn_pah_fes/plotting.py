@@ -83,7 +83,11 @@ def plot_kde_surface(
         fontsize=AXIS_LABEL_FONTSIZE,
         labelpad=AXIS_LABEL_PAD,
     )
-    ax.set_zlabel(r"$-k_BT\ln P(q_S,q_T)$ (Ha)")
+    ax.set_zlabel(
+        r"$-k_BT\ln P(q_S,q_T)$ (Ha)"),
+        fontsize=AXIS_LABEL_FONTSIZE,
+        labelpad=AXIS_LABEL_PAD,
+    )
     fig.colorbar(
         surface,
         ax=ax,
