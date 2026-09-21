@@ -20,6 +20,7 @@ class FitResult:
     design_matrix: np.ndarray
     delta_g_pbe: np.ndarray
     optimization_result: object
+    optimization_history: list[float]
 
 
 def _integration_grid(q_scaled: np.ndarray, params: Parameters):
@@ -124,6 +125,11 @@ def fit_free_energy(
                 f"got {theta0.shape}"
             )
 
+    optimization_history = []
+
+    def callback(theta):
+        optimization_history.append(negative_log_likelihood(theta))
+
     print("Starting optimization...")
     print(f"Number of samples: {len(q)}")
     print(f"Temperature:       {params.temperature:.2f} K")
@@ -136,6 +142,7 @@ def fit_free_energy(
         theta0,
         method="L-BFGS-B",
         options={"maxiter": 2000, "ftol": 1e-10, "gtol": 1e-8, "maxls": 50},
+        callback=callback,
     )
     print(result)
     if not result.success:
@@ -152,4 +159,5 @@ def fit_free_energy(
         design_matrix=X,
         delta_g_pbe=delta_g_pbe,
         optimization_result=result,
+        optimization_history=optimization_history,
     )
