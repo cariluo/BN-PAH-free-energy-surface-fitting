@@ -21,6 +21,7 @@ SAMPLE_FACE_COLOR = "white"
 SAMPLE_EDGE_COLOR = "black"
 SAMPLE_ALPHA = 0.8
 AXIS_LABEL_FONTSIZE = 30
+AXIS_LABEL_PAD = 15
 COLORBAR_SHRINK = 0.7
 COLORBAR_PAD = 0.1
 
@@ -72,8 +73,16 @@ def plot_kde_surface(
         edgecolor=SAMPLE_EDGE_COLOR,
         alpha=SAMPLE_ALPHA,
     )
-    ax.set_xlabel(r"$q_S$ (Ha)", fontsize=AXIS_LABEL_FONTSIZE)
-    ax.set_ylabel(r"$q_T$ (Ha)", fontsize=AXIS_LABEL_FONTSIZE)
+    ax.set_xlabel(
+        r"$q_S$ (Ha)",
+        fontsize=AXIS_LABEL_FONTSIZE,
+        labelpad=AXIS_LABEL_PAD,
+    )
+    ax.set_ylabel(
+        r"$q_T$ (Ha)",
+        fontsize=AXIS_LABEL_FONTSIZE,
+        labelpad=AXIS_LABEL_PAD,
+    )
     ax.set_zlabel(r"$-k_BT\ln P(q_S,q_T)$ (Ha)")
     fig.colorbar(
         surface,
@@ -119,8 +128,16 @@ def plot_3d_free_energy_surface(
         edgecolor=SAMPLE_EDGE_COLOR,
         alpha=SAMPLE_ALPHA,
     )
-    ax.set_xlabel(r"$q_S$ (Ha)", fontsize=AXIS_LABEL_FONTSIZE)
-    ax.set_ylabel(r"$q_T$ (Ha)", fontsize=AXIS_LABEL_FONTSIZE)
+    ax.set_xlabel(
+        r"$q_S$ (Ha)",
+        fontsize=AXIS_LABEL_FONTSIZE,
+        labelpad=AXIS_LABEL_PAD,
+    )
+    ax.set_ylabel(
+        r"$q_T$ (Ha)",
+        fontsize=AXIS_LABEL_FONTSIZE,
+        labelpad=AXIS_LABEL_PAD,
+    )
     ax.set_zlabel(zlabel)
     cbar = fig.colorbar(
         surface,
