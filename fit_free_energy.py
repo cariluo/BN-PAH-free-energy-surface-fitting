@@ -36,7 +36,7 @@ print(f"Using {samples_in_fit} samples in the fitting")
 # Plot coordinate trajectories
 plot_coordinate_time_series(data, RESULTS_DIR)
 
-# Plot correlation between PBE0 energy and S0 energy
+# Plot correlation between q0 and qS coordinates
 plot_energy_correlation(data, RESULTS_DIR)
 
 # Weighted empirical 2D free-energy surface
