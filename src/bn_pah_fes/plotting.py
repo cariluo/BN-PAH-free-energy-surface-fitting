@@ -89,20 +89,37 @@ def plot_singlet_triplet_gap_histogram(
     singlet_triplet_gap = data.qS - data.qT
 
     plt.figure(figsize=(8, 6))
-    counts, bins, _ = plt.hist(
-        singlet_triplet_gap,
-        bins=30,
+    bins = np.histogram_bin_edges(singlet_triplet_gap, bins=30)
+    negative_gap = singlet_triplet_gap[singlet_triplet_gap < 0]
+    nonnegative_gap = singlet_triplet_gap[singlet_triplet_gap >= 0]
+
+    negative_counts, _ = np.histogram(negative_gap, bins=bins)
+    nonnegative_counts, _ = np.histogram(nonnegative_gap, bins=bins)
+
+    plt.bar(
+        bins[:-1],
+        negative_counts,
+        width=np.diff(bins),
+        align="edge",
+        color="green",
         edgecolor="black",
+        alpha=0.8,
+    )
+    plt.bar(
+        bins[:-1],
+        nonnegative_counts,
+        width=np.diff(bins),
+        align="edge",
+        edgecolor="black",
+        alpha=0.8,
     )
 
+    counts = negative_counts + nonnegative_counts
     mean = np.mean(singlet_triplet_gap)
     std = np.std(singlet_triplet_gap)
 
     x_fit = np.linspace(bins[0], bins[-1], 300)
-    gaussian = (
-        counts.max()
-        * np.exp(-0.5 * ((x_fit - mean) / std) ** 2)
-    )
+    gaussian = counts.max() * np.exp(-0.5 * ((x_fit - mean) / std) ** 2)
     plt.plot(
         x_fit,
         gaussian,
@@ -121,7 +138,6 @@ def plot_singlet_triplet_gap_histogram(
         bbox_inches="tight",
     )
     plt.close()
-
 
 def plot_kde_surface(
     data: EnergyData,
