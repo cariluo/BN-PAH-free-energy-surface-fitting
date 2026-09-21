@@ -12,6 +12,7 @@ from bn_pah_fes.plotting import (
     plot_delta_g_contour,
     plot_kde_surface,
     plot_energy_correlation,
+    plot_singlet_triplet_gap_histogram,
 )
 from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 
@@ -40,6 +41,7 @@ plot_coordinate_time_series(data, RESULTS_DIR)
 plot_energy_correlation(data, RESULTS_DIR)
 
 # Plot a histogram of the singlet-triplet gaps
+plot_singlet_triplet_gap_histogram(data, RESULTS_DIR)
 
 # Weighted empirical 2D free-energy surface
 kde_result = calculate_kde_surface(data, params)
