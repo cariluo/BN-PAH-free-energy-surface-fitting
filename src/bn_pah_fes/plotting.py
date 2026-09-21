@@ -93,7 +93,7 @@ def plot_kde_surface(
         ax=ax,
         shrink=COLORBAR_SHRINK,
         pad=COLORBAR_PAD,
-        label=r"$-k_BT\ln P(q_S,q_T)$ (Ha)",
+        #label=r"$-k_BT\ln P(q_S,q_T)$ (Ha)",
     )
     plt.tight_layout()
     plt.savefig(results_dir / "KDE.png", dpi=300)
