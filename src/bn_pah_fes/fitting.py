@@ -64,7 +64,11 @@ def _integration_grid(q_scaled: np.ndarray, params: Parameters):
     return X_integration, log_integration_weights
 
 
-def fit_free_energy(data: EnergyData, params: Parameters) -> FitResult:
+def fit_free_energy(
+    data: EnergyData,
+    params: Parameters,
+    initial_theta: np.ndarray | None = None,
+) -> FitResult:
     """Fit the selected free-energy model."""
     q = data.q
     q_mean = np.mean(q, axis=0)
@@ -109,8 +113,16 @@ def fit_free_energy(data: EnergyData, params: Parameters) -> FitResult:
         # The returned value is dimensionless; it is not a free energy in Ha.
         return params.beta * np.sum(G_data) + len(q_scaled) * log_Z
 
-    theta0 = np.zeros(n_parameters)
-    theta0[0] = np.sqrt(params.kBT)
+    if initial_theta is None:
+        theta0 = np.zeros(n_parameters)
+        theta0[0] = np.sqrt(params.kBT)
+    else:
+        theta0 = np.asarray(initial_theta, dtype=float)
+        if theta0.shape != (n_parameters,):
+            raise ValueError(
+                f"initial_theta must have shape ({n_parameters},), "
+                f"got {theta0.shape}"
+            )
 
     print("Starting optimization...")
     print(f"Number of samples: {len(q)}")
