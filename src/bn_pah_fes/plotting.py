@@ -142,7 +142,7 @@ def plot_3d_free_energy_surface(
             linewidth=1.0,
             label=f"Minimum: (qS, qT) = ({qS_minimum:.4f}, {qT_minimum:.4f}) Ha",
         )
-        ax.legend(loc="best", fontsize=16)
+        ax.legend(loc="best", fontsize=25)
     ax.set_xlabel(
         r"$q_S$ (Ha)",
         fontsize=AXIS_LABEL_FONTSIZE,
@@ -219,7 +219,7 @@ def plot_delta_g_contour(
         linewidth=2,
         label=r"$q_T=q_S$",
     )
-    plt.legend(loc="best", fontsize=16)
+    plt.legend(loc="best", fontsize=25)
     plt.xlabel(r"$q_S$ (Ha)", fontsize=20)
     plt.ylabel(r"$q_T$ (Ha)", fontsize=20)
     cbar = plt.colorbar(
