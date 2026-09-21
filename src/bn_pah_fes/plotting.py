@@ -81,6 +81,26 @@ def plot_energy_correlation(
     plt.close()
 
 
+
+def plot_optimizer_performance(
+    history: list[float],
+    results_dir: Path,
+    filename: str = "optimizer_performance.png",
+) -> None:
+    """Plot the negative log-likelihood as a function of optimizer iteration."""
+    if not history:
+        return
+
+    iterations = np.arange(1, len(history) + 1)
+    plt.figure(figsize=(8, 6))
+    plt.plot(iterations, history, linewidth=2)
+    plt.xlabel("Iteration", fontsize=30)
+    plt.ylabel("Negative log-likelihood", fontsize=30)
+    plt.tick_params(axis="both", labelsize=18)
+    plt.tight_layout()
+    plt.savefig(results_dir / filename, dpi=300, bbox_inches="tight")
+    plt.close()
+
 def plot_singlet_triplet_gap_histogram(
     data: EnergyData,
     results_dir: Path,
