@@ -52,7 +52,7 @@ def plot_energy_correlation(
     data: EnergyData,
     results_dir: Path,
 ) -> None:
-    """Plot the correlation between PBE0 and S0 energies."""
+    """Plot the correlation between q0 and qS coordinates."""
     plt.figure(figsize=(8, 6))
     plt.scatter(
         data.E_pbe,
