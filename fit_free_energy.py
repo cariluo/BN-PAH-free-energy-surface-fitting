@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from bn_pah_fes.config import Parameters
@@ -36,6 +37,32 @@ print(f"Using {samples_in_fit} samples in the fitting")
 plot_coordinate_time_series(data, RESULTS_DIR)
 
 # Plot correlation between PBE0 energy and S0 energy
+plt.figure(figsize=(8, 6))
+plt.scatter(
+    data.E_pbe,
+    data.S0,
+    s=20,
+    facecolors="white",
+    edgecolors="black",
+    alpha=0.8,
+)
+
+slope, intercept = np.polyfit(data.E_pbe, data.S0, 1)
+x_fit = np.linspace(data.E_pbe.min(), data.E_pbe.max(), 200)
+plt.plot(
+    x_fit,
+    slope * x_fit + intercept,
+    linewidth=2,
+    label=fr"$r = {np.corrcoef(data.E_pbe, data.S0)[0, 1]:.4f}$",
+)
+
+plt.xlabel(r"PBE0 energy (Ha)", fontsize=30)
+plt.ylabel(r"$S_0$ energy (Ha)", fontsize=30)
+plt.tick_params(axis="both", labelsize=18)
+plt.legend(fontsize=20)
+plt.tight_layout()
+plt.savefig(RESULTS_DIR / "PBE0_S0_correlation.png", dpi=300, bbox_inches="tight")
+plt.close()
 
 # Weighted empirical 2D free-energy surface
 kde_result = calculate_kde_surface(data, params)
