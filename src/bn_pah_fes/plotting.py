@@ -119,8 +119,8 @@ def plot_3d_free_energy_surface(
         edgecolor=SAMPLE_EDGE_COLOR,
         alpha=SAMPLE_ALPHA,
     )
-    ax.set_xlabel(r"$q_S$", fontsize=AXIS_LABEL_FONTSIZE)
-    ax.set_ylabel(r"$q_T$", fontsize=AXIS_LABEL_FONTSIZE)
+    ax.set_xlabel(r"$q_S$ (Ha)", fontsize=AXIS_LABEL_FONTSIZE)
+    ax.set_ylabel(r"$q_T$ (Ha)", fontsize=AXIS_LABEL_FONTSIZE)
     ax.set_zlabel(zlabel)
     cbar = fig.colorbar(
         surface,
