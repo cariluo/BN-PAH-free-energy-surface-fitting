@@ -91,6 +91,7 @@ plot_delta_g_contour(
     r"$\Delta G_0$ (Ha)",
     RESULTS_DIR,
     samples_in_fit,
+    minimum=(minima["G0"].qS, minima["G0"].qT, minima["G0"].value),
 )
 plot_delta_g_contour(
     QS,
@@ -101,6 +102,7 @@ plot_delta_g_contour(
     r"$\Delta G_S$ (Ha)",
     RESULTS_DIR,
     samples_in_fit,
+    minimum=(minima["GS"].qS, minima["GS"].qT, minima["GS"].value),
 )
 plot_delta_g_contour(
     QS,
@@ -111,6 +113,7 @@ plot_delta_g_contour(
     r"$\Delta G_T$ (Ha)",
     RESULTS_DIR,
     samples_in_fit,
+    minimum=(minima["GT"].qS, minima["GT"].qT, minima["GT"].value),
 )
 plot_3d_free_energy_surface(
     QS,
@@ -122,6 +125,7 @@ plot_3d_free_energy_surface(
     r"$\Delta G_0(q_S,q_T)$ (Ha)",
     RESULTS_DIR,
     samples_in_fit,
+    minimum=(minima["G0"].qS, minima["G0"].qT, minima["G0"].value),
 )
 plot_3d_free_energy_surface(
     QS,
@@ -133,6 +137,7 @@ plot_3d_free_energy_surface(
     r"$\Delta G_S(q_S,q_T)$ (Ha)",
     RESULTS_DIR,
     samples_in_fit,
+    minimum=(minima["GS"].qS, minima["GS"].qT, minima["GS"].value),
 )
 plot_3d_free_energy_surface(
     QS,
@@ -144,4 +149,5 @@ plot_3d_free_energy_surface(
     r"$\Delta G_T(q_S,q_T)$ (Ha)",
     RESULTS_DIR,
     samples_in_fit,
+    minimum=(minima["GT"].qS, minima["GT"].qT, minima["GT"].value),
 )
