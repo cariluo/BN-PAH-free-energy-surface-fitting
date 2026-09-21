@@ -106,6 +106,7 @@ def plot_3d_free_energy_surface(
     zlabel: str,
     results_dir: Path,
     samples_in_fit: int,
+    minimum: tuple[float, float, float] | None = None,
 ) -> None:
     """Plot a 3D free-energy surface and sampled trajectory points."""
     fig = plt.figure(figsize=SURFACE_FIGSIZE)
@@ -128,6 +129,20 @@ def plot_3d_free_energy_surface(
         edgecolor=SAMPLE_EDGE_COLOR,
         alpha=SAMPLE_ALPHA,
     )
+    if minimum is not None:
+        qS_minimum, qT_minimum, G_minimum = minimum
+        ax.scatter(
+            qS_minimum,
+            qT_minimum,
+            G_minimum,
+            marker="*",
+            s=180,
+            facecolor="red",
+            edgecolor="black",
+            linewidth=1.0,
+            label="Minimum",
+        )
+        ax.legend(loc="best")
     ax.set_xlabel(
         r"$q_S$ (Ha)",
         fontsize=AXIS_LABEL_FONTSIZE,
@@ -161,6 +176,7 @@ def plot_delta_g_contour(
     cbarlabel: str,
     results_dir: Path,
     samples_in_fit: int,
+    minimum: tuple[float, float, float] | None = None,
 ) -> None:
     """Plot a 2D free-energy contour with sampled points and qT=qS."""
     plt.figure(figsize=(8, 6))
@@ -180,6 +196,19 @@ def plot_delta_g_contour(
         edgecolors="black",
         label=f"{samples_in_fit} sampled points",
     )
+    if minimum is not None:
+        qS_minimum, qT_minimum, _ = minimum
+        plt.scatter(
+            qS_minimum,
+            qT_minimum,
+            marker="*",
+            s=220,
+            facecolors="red",
+            edgecolors="black",
+            linewidths=1.0,
+            label="Minimum",
+            zorder=5,
+        )
     diag_min = max(QS.min(), QT.min())
     diag_max = min(QS.max(), QT.max())
     plt.plot(
