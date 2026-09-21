@@ -11,6 +11,7 @@ from bn_pah_fes.plotting import (
     plot_coordinate_time_series,
     plot_delta_g_contour,
     plot_kde_surface,
+    plot_optimizer_performance,
     plot_energy_correlation,
     plot_singlet_triplet_gap_histogram,
 )
@@ -55,6 +56,7 @@ plot_kde_surface(data, kde_result, RESULTS_DIR)
 
 # Cubic polynomial fit
 fit_result = fit_free_energy(data, params)
+plot_optimizer_performance(fit_result.optimization_history, RESULTS_DIR)
 DeltaG_PBE = fit_result.delta_g_pbe
 
 output_data = np.column_stack([data.idx, q[:, 0], q[:, 1], q[:, 2], DeltaG_PBE])
