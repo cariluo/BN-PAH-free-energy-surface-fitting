@@ -81,6 +81,31 @@ def plot_energy_correlation(
     plt.close()
 
 
+def plot_singlet_triplet_gap_histogram(
+    data: EnergyData,
+    results_dir: Path,
+) -> None:
+    """Plot a histogram of the singlet-triplet gaps qS - qT."""
+    singlet_triplet_gap = data.qS - data.qT
+
+    plt.figure(figsize=(8, 6))
+    plt.hist(
+        singlet_triplet_gap,
+        bins=30,
+        edgecolor="black",
+    )
+    plt.xlabel(r"$q_S-q_T$ (Ha)", fontsize=30)
+    plt.ylabel("Count", fontsize=30)
+    plt.tick_params(axis="both", labelsize=18)
+    plt.tight_layout()
+    plt.savefig(
+        results_dir / "singlet_triplet_gap_histogram.png",
+        dpi=300,
+        bbox_inches="tight",
+    )
+    plt.close()
+
+
 def plot_kde_surface(
     data: EnergyData,
     kde_result: KDEResult,
