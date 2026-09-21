@@ -35,6 +35,8 @@ print(f"Using {samples_in_fit} samples in the fitting")
 # Plot coordinate trajectories
 plot_coordinate_time_series(data, RESULTS_DIR)
 
+# Plot correlation between PBE0 energy and S0 energy
+
 # Weighted empirical 2D free-energy surface
 kde_result = calculate_kde_surface(data, params)
 print("G range:", kde_result.free_energy.min(), kde_result.free_energy.max())
