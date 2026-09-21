@@ -20,7 +20,8 @@ SAMPLE_SIZE = 10
 SAMPLE_FACE_COLOR = "white"
 SAMPLE_EDGE_COLOR = "black"
 SAMPLE_ALPHA = 0.8
-AXIS_LABEL_FONTSIZE = 30
+AXIS_LABEL_FONTSIZE = 35
+AXIS_TICK_FONTSIZE = 18
 AXIS_LABEL_PAD = 15
 COLORBAR_SHRINK = 0.7
 COLORBAR_PAD = 0.1
@@ -88,6 +89,8 @@ def plot_kde_surface(
         fontsize=AXIS_LABEL_FONTSIZE,
         labelpad=AXIS_LABEL_PAD,
     )
+    ax.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
+    ax.tick_params(axis="z", labelsize=AXIS_TICK_FONTSIZE)
     fig.colorbar(
         surface,
         ax=ax,
@@ -162,6 +165,8 @@ def plot_3d_free_energy_surface(
         fontsize=AXIS_LABEL_FONTSIZE,
         labelpad=AXIS_LABEL_PAD,
     )
+    ax.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
+    ax.tick_params(axis="z", labelsize=AXIS_TICK_FONTSIZE)
     cbar = fig.colorbar(
         surface,
         ax=ax,
@@ -169,6 +174,7 @@ def plot_3d_free_energy_surface(
         pad=COLORBAR_PAD,
     )
     #cbar.set_label(zlabel)
+    cbar.ax.tick_params(labelsize=AXIS_TICK_FONTSIZE)
     plt.tight_layout()
     plt.savefig(results_dir / filename, dpi=300)
     plt.close()
@@ -230,11 +236,13 @@ def plot_delta_g_contour(
     plt.legend(loc="best", fontsize=20)
     plt.xlabel(r"$q_S$ (Ha)", fontsize=20)
     plt.ylabel(r"$q_T$ (Ha)", fontsize=20)
+    plt.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
     cbar = plt.colorbar(
         contour,
         ticks=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
     )
     cbar.set_label(cbarlabel, fontsize=20)
+    cbar.ax.tick_params(labelsize=AXIS_TICK_FONTSIZE)
     plt.tight_layout()
     plt.savefig(results_dir / filename, dpi=300, bbox_inches="tight")
     plt.close()
