@@ -89,14 +89,31 @@ def plot_singlet_triplet_gap_histogram(
     singlet_triplet_gap = data.qS - data.qT
 
     plt.figure(figsize=(8, 6))
-    plt.hist(
+    counts, bins, _ = plt.hist(
         singlet_triplet_gap,
         bins=30,
         edgecolor="black",
     )
+
+    mean = np.mean(singlet_triplet_gap)
+    std = np.std(singlet_triplet_gap)
+
+    x_fit = np.linspace(bins[0], bins[-1], 300)
+    gaussian = (
+        counts.max()
+        * np.exp(-0.5 * ((x_fit - mean) / std) ** 2)
+    )
+    plt.plot(
+        x_fit,
+        gaussian,
+        linewidth=2,
+        label=fr"$\mu = {mean:.4f}$ Ha\n$\sigma = {std:.4f}$ Ha",
+    )
+
     plt.xlabel(r"$q_S-q_T$ (Ha)", fontsize=30)
     plt.ylabel("Count", fontsize=30)
     plt.tick_params(axis="both", labelsize=18)
+    plt.legend(fontsize=20)
     plt.tight_layout()
     plt.savefig(
         results_dir / "singlet_triplet_gap_histogram.png",
