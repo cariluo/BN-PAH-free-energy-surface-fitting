@@ -107,7 +107,7 @@ def plot_singlet_triplet_gap_histogram(
         x_fit,
         gaussian,
         linewidth=2,
-        label=fr"$\mu = {mean:.4f}$ Ha\n$\sigma = {std:.4f}$ Ha",
+        label=f"$\\mu = {mean:.4f}$ Ha\n$\\sigma = {std:.4f}$ Ha",
     )
 
     plt.xlabel(r"$q_S-q_T$ (Ha)", fontsize=30)
