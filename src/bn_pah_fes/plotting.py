@@ -164,7 +164,7 @@ def plot_3d_free_energy_surface(
         shrink=COLORBAR_SHRINK,
         pad=COLORBAR_PAD,
     )
-    cbar.set_label(zlabel)
+    #cbar.set_label(zlabel)
     plt.tight_layout()
     plt.savefig(results_dir / filename, dpi=300)
     plt.close()
