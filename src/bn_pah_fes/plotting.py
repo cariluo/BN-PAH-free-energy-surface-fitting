@@ -140,7 +140,7 @@ def plot_3d_free_energy_surface(
             facecolor="red",
             edgecolor="black",
             linewidth=1.0,
-            label="Minimum",
+            label=f"Minimum: (qS, qT) = ({qS_minimum:.4f}, {qT_minimum:.4f}) Ha",
         )
         ax.legend(loc="best")
     ax.set_xlabel(
@@ -206,7 +206,7 @@ def plot_delta_g_contour(
             facecolors="red",
             edgecolors="black",
             linewidths=1.0,
-            label="Minimum",
+            label=f"Minimum: (qS, qT) = ({qS_minimum:.4f}, {qT_minimum:.4f}) Ha",
             zorder=5,
         )
     diag_min = max(QS.min(), QT.min())
