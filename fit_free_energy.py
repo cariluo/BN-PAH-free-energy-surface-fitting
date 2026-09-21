@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from bn_pah_fes.config import Parameters
@@ -12,6 +11,7 @@ from bn_pah_fes.plotting import (
     plot_coordinate_time_series,
     plot_delta_g_contour,
     plot_kde_surface,
+    plot_energy_correlation,
 )
 from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 
