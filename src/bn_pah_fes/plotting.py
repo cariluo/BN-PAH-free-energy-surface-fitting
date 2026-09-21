@@ -84,7 +84,7 @@ def plot_kde_surface(
         labelpad=AXIS_LABEL_PAD,
     )
     ax.set_zlabel(
-        r"$-k_BT\ln P(q_S,q_T)$ (Ha)"),
+        r"$-k_BT\ln P(q_S,q_T)$ (Ha)",
         fontsize=AXIS_LABEL_FONTSIZE,
         labelpad=AXIS_LABEL_PAD,
     )
