@@ -157,7 +157,11 @@ def plot_3d_free_energy_surface(
         fontsize=AXIS_LABEL_FONTSIZE,
         labelpad=AXIS_LABEL_PAD,
     )
-    ax.set_zlabel(zlabel)
+    ax.set_zlabel(
+        zlabel,
+        fontsize=AXIS_LABEL_FONTSIZE,
+        labelpad=AXIS_LABEL_PAD,
+    )
     cbar = fig.colorbar(
         surface,
         ax=ax,
