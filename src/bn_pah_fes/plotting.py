@@ -10,6 +10,21 @@ from .kde import KDEResult
 plt.rcParams["font.family"] = "Times New Roman"
 
 
+# Shared 3D surface plotting parameters.
+SURFACE_FIGSIZE = (9, 7)
+SURFACE_VIEW = (30, -60)
+SURFACE_CMAP = "viridis"
+SURFACE_ALPHA = 0.7
+SURFACE_EDGE_COLOR = "none"
+SAMPLE_SIZE = 5
+SAMPLE_FACE_COLOR = "white"
+SAMPLE_EDGE_COLOR = "black"
+SAMPLE_ALPHA = 0.5
+AXIS_LABEL_FONTSIZE = 30
+COLORBAR_SHRINK = 0.7
+COLORBAR_PAD = 0.1
+
+
 def plot_coordinate_time_series(
     data: EnergyData,
     results_dir: Path,
@@ -37,33 +52,34 @@ def plot_kde_surface(
     results_dir: Path,
 ) -> None:
     """Plot the weighted empirical 2D free-energy surface."""
-    fig = plt.figure(figsize=(9, 7))
+    fig = plt.figure(figsize=SURFACE_FIGSIZE)
     ax = fig.add_subplot(111, projection="3d")
+    ax.view_init(elev=SURFACE_VIEW[0], azim=SURFACE_VIEW[1])
     surface = ax.plot_surface(
         kde_result.QS,
         kde_result.QT,
         kde_result.free_energy,
-        cmap="viridis",
-        edgecolor="none",
-        alpha=0.7,
+        cmap=SURFACE_CMAP,
+        edgecolor=SURFACE_EDGE_COLOR,
+        alpha=SURFACE_ALPHA,
     )
     ax.scatter(
         data.qS,
         data.qT,
         kde_result.sampled_free_energy + 0.01,
-        s=5,
-        facecolor="white",
-        edgecolor="black",
-        alpha=0.5,
+        s=SAMPLE_SIZE,
+        facecolor=SAMPLE_FACE_COLOR,
+        edgecolor=SAMPLE_EDGE_COLOR,
+        alpha=SAMPLE_ALPHA,
     )
-    ax.set_xlabel(r"$q_S$", fontsize=30)
-    ax.set_ylabel(r"$q_T$", fontsize=30)
+    ax.set_xlabel(r"$q_S$", fontsize=AXIS_LABEL_FONTSIZE)
+    ax.set_ylabel(r"$q_T$", fontsize=AXIS_LABEL_FONTSIZE)
     ax.set_zlabel(r"$-k_BT\ln P(q_S,q_T)$ (Ha)")
     fig.colorbar(
         surface,
         ax=ax,
-        shrink=0.7,
-        pad=0.1,
+        shrink=COLORBAR_SHRINK,
+        pad=COLORBAR_PAD,
         label=r"$-k_BT\ln P(q_S,q_T)$ (Ha)",
     )
     plt.tight_layout()
@@ -83,39 +99,38 @@ def plot_3d_free_energy_surface(
     samples_in_fit: int,
 ) -> None:
     """Plot a 3D free-energy surface and sampled trajectory points."""
-    fig = plt.figure(figsize=(9, 7))
+    fig = plt.figure(figsize=SURFACE_FIGSIZE)
     ax = fig.add_subplot(111, projection="3d")
-    ax.view_init(elev=30, azim=-60)
+    ax.view_init(elev=SURFACE_VIEW[0], azim=SURFACE_VIEW[1])
     surface = ax.plot_surface(
         QS,
         QT,
         surface_data,
-        cmap="viridis",
-        alpha=0.8,
+        cmap=SURFACE_CMAP,
+        edgecolor=SURFACE_EDGE_COLOR,
+        alpha=SURFACE_ALPHA,
     )
     ax.scatter(
         q[:, 1],
         q[:, 2],
         sampled,
-        facecolors="white",
-        edgecolors="black",
-        label=f"{samples_in_fit} sampled points",
-        depthshade=False,
+        s=SAMPLE_SIZE,
+        facecolor=SAMPLE_FACE_COLOR,
+        edgecolor=SAMPLE_EDGE_COLOR,
+        alpha=SAMPLE_ALPHA,
     )
-    ax.legend(loc="upper right")
-    ax.set_xlabel(r"$q_S$ (Ha)", fontsize=20)
-    ax.set_ylabel(r"$q_T$ (Ha)", fontsize=20)
-    ax.set_zlabel(zlabel, fontsize=20)
+    ax.set_xlabel(r"$q_S$", fontsize=AXIS_LABEL_FONTSIZE)
+    ax.set_ylabel(r"$q_T$", fontsize=AXIS_LABEL_FONTSIZE)
+    ax.set_zlabel(zlabel)
     cbar = fig.colorbar(
         surface,
         ax=ax,
-        shrink=0.7,
-        pad=0.1,
-        #ticks=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+        shrink=COLORBAR_SHRINK,
+        pad=COLORBAR_PAD,
     )
     cbar.set_label(zlabel, fontsize=20)
     plt.tight_layout()
-    plt.savefig(results_dir / filename, dpi=300, bbox_inches="tight")
+    plt.savefig(results_dir / filename, dpi=300)
     plt.close()
     print(f"Saved {results_dir / filename}")
 
