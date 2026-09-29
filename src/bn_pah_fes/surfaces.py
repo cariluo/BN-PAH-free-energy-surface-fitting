@@ -213,11 +213,6 @@ def _find_surface_minimum(
         surface_result.QS[initial_index],
         surface_result.QT[initial_index],
     ])
-    bounds = [
-        (surface_result.qS_grid.min(), surface_result.qS_grid.max()),
-        (surface_result.qT_grid.min(), surface_result.qT_grid.max()),
-    ]
-
     def objective(point):
         value, _ = _surface_value_and_gradient(
             point, surface, surface_result.q0_grid, fit_result, params
@@ -234,8 +229,7 @@ def _find_surface_minimum(
         objective,
         initial_guess,
         jac=gradient,
-        method="L-BFGS-B",
-        bounds=bounds,
+        method="BFGS",
     )
 
     return SurfaceMinimum(
