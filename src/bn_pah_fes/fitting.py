@@ -125,7 +125,7 @@ def fit_free_energy(
                 f"got {theta0.shape}"
             )
 
-    optimization_history = []
+    optimization_history = [negative_log_likelihood(theta0)]
 
     def callback(theta):
         optimization_history.append(negative_log_likelihood(theta))
