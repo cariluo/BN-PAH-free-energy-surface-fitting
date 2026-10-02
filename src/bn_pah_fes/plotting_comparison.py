@@ -8,6 +8,9 @@ from .kde import KDEResult
 
 plt.rcParams["font.family"] = "Times New Roman"
 
+VIEW_ELEV = 30
+VIEW_AZIM = -60
+
 
 def plot_mle_kde_comparison(
     qS_grid: np.ndarray,
@@ -49,7 +52,11 @@ def plot_mle_kde_comparison(
         ax.set_title(title, fontsize=20)
         ax.tick_params(axis="both", labelsize=11)
         ax.tick_params(axis="z", labelsize=11)
-        ax.view_init(elev=30, azim=-60)
+
+        # Use the same orthographic camera for every panel.
+        ax.set_proj_type("ortho")
+        ax.view_init(elev=VIEW_ELEV, azim=VIEW_AZIM)
+
         fig.colorbar(plotted, ax=ax, shrink=0.65, pad=0.08)
 
     fig.suptitle(
