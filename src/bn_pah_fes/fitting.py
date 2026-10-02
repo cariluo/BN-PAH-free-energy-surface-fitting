@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 from scipy.optimize import minimize
@@ -65,6 +65,37 @@ def _integration_grid(q_scaled: np.ndarray, params: Parameters):
     return X_integration, log_integration_weights
 
 
+def _harmonic_initial_theta(
+    data: EnergyData,
+    params: Parameters,
+    X_cubic: np.ndarray,
+) -> np.ndarray:
+    """Construct a squared-cubic initialization from a harmonic fit.
+
+    The harmonic surface is shifted by a constant so that it is positive,
+    then its square root is fit with the cubic polynomial basis. The constant
+    shift does not change the normalized Boltzmann distribution, so squaring
+    the resulting polynomial provides a useful initialization for the
+    squared-cubic model.
+    """
+    harmonic_params = replace(params, model="harmonic")
+    harmonic_result = fit_free_energy(data, harmonic_params)
+
+    harmonic_values = harmonic_free_energy(
+        harmonic_result.theta,
+        harmonic_result.design_matrix,
+    )
+
+    energy_shift = max(
+        0.0,
+        -float(np.min(harmonic_values)) + params.kBT,
+    )
+    target = np.sqrt(harmonic_values + energy_shift)
+
+    theta0, *_ = np.linalg.lstsq(X_cubic, target, rcond=None)
+    return theta0
+
+
 def fit_free_energy(
     data: EnergyData,
     params: Parameters,
@@ -115,8 +146,11 @@ def fit_free_energy(
         return params.beta * np.sum(G_data) + len(q_scaled) * log_Z
 
     if initial_theta is None:
-        theta0 = np.zeros(n_parameters)
-        theta0[0] = np.sqrt(params.kBT)
+        if params.model == "squared_cubic":
+            theta0 = _harmonic_initial_theta(data, params, X)
+        else:
+            theta0 = np.zeros(n_parameters)
+            theta0[0] = np.sqrt(params.kBT)
     else:
         theta0 = np.asarray(initial_theta, dtype=float)
         if theta0.shape != (n_parameters,):
