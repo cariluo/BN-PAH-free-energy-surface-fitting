@@ -4,6 +4,8 @@ import numpy as np
 
 from bn_pah_fes.config import Parameters
 from bn_pah_fes.data import load_data
+from bn_pah_fes.diagnostics import compare_mle_to_kde
+from bn_pah_fes.plotting_comparison import plot_mle_kde_comparison
 from bn_pah_fes.fitting import fit_free_energy
 from bn_pah_fes.kde import calculate_kde_surface
 from bn_pah_fes.plotting import (
@@ -69,6 +71,22 @@ np.savetxt(
 
 # Reweighted 2D surfaces
 surface_result = calculate_surfaces(fit_result, q, params)
+comparison = compare_mle_to_kde(surface_result, kde_result)
+print(
+    "MLE vs KDE G0: "
+    f"grid RMSE = {comparison.grid_rmse:.6e} Ha, "
+    f"MAE = {comparison.grid_mae:.6e} Ha, "
+    f"max |difference| = {comparison.grid_max_abs:.6e} Ha, "
+    f"sampled RMSE = {comparison.sampled_rmse:.6e} Ha"
+)
+plot_mle_kde_comparison(
+    surface_result.qS_grid,
+    surface_result.qT_grid,
+    surface_result.G0_surface,
+    kde_result,
+    comparison,
+    RESULTS_DIR,
+)
 QS = surface_result.QS
 QT = surface_result.QT
 G0_surface = surface_result.G0_surface
