@@ -98,6 +98,7 @@ def plot_optimizer_performance(
 
     plt.figure(figsize=(8, 6))
     plt.plot(iterations, history, linewidth=2)
+    plt.scatter(iterations, history, s=35, zorder=3)
     plt.xlabel("Optimization iteration", fontsize=30)
     plt.ylabel("MLE objective (negative log-likelihood)", fontsize=30)
     plt.title(f"{model.replace('_', ' ').title()} model", fontsize=24)
