@@ -169,6 +169,7 @@ def plot_kde_surface(
     data: EnergyData,
     kde_result: KDEResult,
     results_dir: Path,
+    surface_limits: tuple[float, float] | None = None,
 ) -> None:
     """Plot the weighted empirical 2D free-energy surface."""
     fig = plt.figure(figsize=SURFACE_FIGSIZE)
@@ -181,6 +182,8 @@ def plot_kde_surface(
         cmap=SURFACE_CMAP,
         edgecolor=SURFACE_EDGE_COLOR,
         alpha=SURFACE_ALPHA,
+        vmin=None if surface_limits is None else surface_limits[0],
+        vmax=None if surface_limits is None else surface_limits[1],
     )
     ax.scatter(
         data.qS,
@@ -208,6 +211,8 @@ def plot_kde_surface(
     )
     ax.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
     ax.tick_params(axis="z", labelsize=AXIS_TICK_FONTSIZE)
+    if surface_limits is not None:
+        ax.set_zlim(*surface_limits)
     fig.colorbar(
         surface,
         ax=ax,
@@ -231,6 +236,7 @@ def plot_3d_free_energy_surface(
     results_dir: Path,
     samples_in_fit: int,
     minimum: tuple[float, float, float] | None = None,
+    surface_limits: tuple[float, float] | None = None,
 ) -> None:
     """Plot a 3D free-energy surface and sampled trajectory points."""
     fig = plt.figure(figsize=SURFACE_FIGSIZE)
@@ -243,6 +249,8 @@ def plot_3d_free_energy_surface(
         cmap=SURFACE_CMAP,
         edgecolor=SURFACE_EDGE_COLOR,
         alpha=SURFACE_ALPHA,
+        vmin=None if surface_limits is None else surface_limits[0],
+        vmax=None if surface_limits is None else surface_limits[1],
     )
     ax.scatter(
         q[:, 1],
@@ -284,6 +292,8 @@ def plot_3d_free_energy_surface(
     )
     ax.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
     ax.tick_params(axis="z", labelsize=AXIS_TICK_FONTSIZE)
+    if surface_limits is not None:
+        ax.set_zlim(*surface_limits)
     cbar = fig.colorbar(
         surface,
         ax=ax,
