@@ -6,7 +6,13 @@ from scipy.special import logsumexp
 
 from .config import Parameters
 from .data import EnergyData
-from .polynomial import harmonic_basis, harmonic_free_energy, free_energy, polynomial_basis
+from .polynomial import (
+    harmonic_basis,
+    harmonic_free_energy,
+    free_energy,
+    polynomial,
+    polynomial_basis,
+)
 
 
 @dataclass(frozen=True)
@@ -65,35 +71,18 @@ def _integration_grid(q_scaled: np.ndarray, params: Parameters):
     return X_integration, log_integration_weights
 
 
-def _harmonic_initial_theta(
-    data: EnergyData,
-    params: Parameters,
-    X_cubic: np.ndarray,
+def _free_energy_parameter_gradient(
+    theta: np.ndarray,
+    X: np.ndarray,
+    model: str,
 ) -> np.ndarray:
-    """Construct a squared-cubic initialization from a harmonic fit.
-
-    The harmonic surface is shifted by a constant so that it is positive,
-    then its square root is fit with the cubic polynomial basis. The constant
-    shift does not change the normalized Boltzmann distribution, so squaring
-    the resulting polynomial provides a useful initialization for the
-    squared-cubic model.
-    """
-    harmonic_params = replace(params, model="harmonic")
-    harmonic_result = fit_free_energy(data, harmonic_params)
-
-    harmonic_values = harmonic_free_energy(
-        harmonic_result.theta,
-        harmonic_result.design_matrix,
-    )
-
-    energy_shift = max(
-        0.0,
-        -float(np.min(harmonic_values)) + params.kBT,
-    )
-    target = np.sqrt(harmonic_values + energy_shift)
-
-    theta0, *_ = np.linalg.lstsq(X_cubic, target, rcond=None)
-    return theta0
+    """Return dG/dtheta for each configuration and parameter."""
+    if model == "squared_cubic":
+        polynomial_values = polynomial(theta, X)
+        return 2.0 * polynomial_values[:, None] * X
+    if model == "harmonic":
+        return X
+    raise ValueError(f"Unknown free-energy model: {model}")
 
 
 def fit_free_energy(
@@ -145,6 +134,27 @@ def fit_free_energy(
         # The returned value is dimensionless; it is not a free energy in Ha.
         return params.beta * np.sum(G_data) + len(q_scaled) * log_Z
 
+    def negative_log_likelihood_gradient(theta):
+        """Evaluate the analytic gradient of the negative log-likelihood."""
+        G_data = evaluate_free_energy(theta, X)
+        G_grid = evaluate_free_energy(theta, X_integration)
+        if not np.all(np.isfinite(G_data)) or not np.all(np.isfinite(G_grid)):
+            return np.full(n_parameters, np.nan)
+
+        dG_data = _free_energy_parameter_gradient(theta, X, params.model)
+        dG_grid = _free_energy_parameter_gradient(
+            theta, X_integration, params.model
+        )
+
+        log_weights = -params.beta * G_grid + log_integration_weights
+        log_weights -= logsumexp(log_weights)
+        weights = np.exp(log_weights)
+
+        return params.beta * (
+            np.sum(dG_data, axis=0)
+            - len(q_scaled) * np.sum(weights[:, None] * dG_grid, axis=0)
+        )
+
     if initial_theta is None:
         if params.model == "squared_cubic":
             theta0 = _harmonic_initial_theta(data, params, X)
@@ -159,7 +169,7 @@ def fit_free_energy(
                 f"got {theta0.shape}"
             )
 
-    optimization_history = []
+    optimization_history = [negative_log_likelihood(theta0)]
 
     def callback(theta):
         optimization_history.append(negative_log_likelihood(theta))
@@ -174,6 +184,7 @@ def fit_free_energy(
     result = minimize(
         negative_log_likelihood,
         theta0,
+        jac=negative_log_likelihood_gradient,
         method="L-BFGS-B",
         options={"maxiter": 2000, "ftol": 1e-10, "gtol": 1e-8, "maxls": 50},
         callback=callback,

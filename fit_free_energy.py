@@ -52,11 +52,14 @@ print(
     kde_result.sampled_free_energy.min(),
     kde_result.sampled_free_energy.max(),
 )
-plot_kde_surface(data, kde_result, RESULTS_DIR)
 
 # Cubic polynomial fit
 fit_result = fit_free_energy(data, params)
-plot_optimizer_performance(fit_result.optimization_history, RESULTS_DIR)
+plot_optimizer_performance(
+    fit_result.optimization_history,
+    RESULTS_DIR,
+    model=params.model,
+)
 DeltaG_PBE = fit_result.delta_g_pbe
 
 output_data = np.column_stack([data.idx, q[:, 0], q[:, 1], q[:, 2], DeltaG_PBE])
@@ -74,6 +77,18 @@ QT = surface_result.QT
 G0_surface = surface_result.G0_surface
 GS_surface = surface_result.GS_surface
 GT_surface = surface_result.GT_surface
+
+# Use one z-axis/color scale for the KDE and fitted DeltaG0 surfaces.
+surface_limits = (
+    min(kde_result.free_energy.min(), G0_surface.min()),
+    max(kde_result.free_energy.max(), G0_surface.max()),
+)
+plot_kde_surface(
+    data,
+    kde_result,
+    RESULTS_DIR,
+    surface_limits=surface_limits,
+)
 
 # Surface values evaluated at the subsampled trajectory points.
 # These are used to overlay the sampled configurations on the 2D/3D surfaces.
@@ -136,6 +151,7 @@ plot_3d_free_energy_surface(
     RESULTS_DIR,
     samples_in_fit,
     minimum=(minima["G0"].qS, minima["G0"].qT, minima["G0"].value),
+    surface_limits=surface_limits,
 )
 plot_3d_free_energy_surface(
     QS,
