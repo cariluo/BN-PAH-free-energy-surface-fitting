@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 from scipy.optimize import minimize
@@ -156,8 +156,11 @@ def fit_free_energy(
         )
 
     if initial_theta is None:
-        theta0 = np.zeros(n_parameters)
-        theta0[0] = np.sqrt(params.kBT)
+        if params.model == "squared_cubic":
+            theta0 = _harmonic_initial_theta(data, params, X)
+        else:
+            theta0 = np.zeros(n_parameters)
+            theta0[0] = np.sqrt(params.kBT)
     else:
         theta0 = np.asarray(initial_theta, dtype=float)
         if theta0.shape != (n_parameters,):
