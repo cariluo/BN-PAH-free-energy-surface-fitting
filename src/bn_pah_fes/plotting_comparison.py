@@ -3,7 +3,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .data import EnergyData
 from .diagnostics import MLEKDEComparison
 from .kde import KDEResult
 
@@ -22,35 +21,36 @@ def plot_mle_kde_comparison(
     kde_surface = kde_result.free_energy.T
     difference = comparison.grid_difference
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5), constrained_layout=True)
+    fig = plt.figure(figsize=(18, 6))
 
-    for ax, surface, title in zip(
-        axes[:2],
-        [mle_surface, kde_surface],
-        [r"MLE $Delta G_0$", r"KDE $Delta G_0$"],
-    ):
-        contour = ax.contourf(qS_grid, qT_grid, surface, levels=30, cmap="viridis")
-        ax.set_xlabel(r"$q_S$ (Ha)", fontsize=20)
-        ax.set_ylabel(r"$q_T$ (Ha)", fontsize=20)
-        ax.set_title(title, fontsize=22)
-        ax.tick_params(labelsize=14)
-        fig.colorbar(contour, ax=ax, label="Free energy (Ha)")
+    surfaces = [
+        (mle_surface, r"MLE $\Delta G_0$", "viridis"),
+        (kde_surface, r"KDE $\Delta G_0$", "viridis"),
+        (difference, r"MLE $-$ KDE", "coolwarm"),
+    ]
 
-    limit = np.max(np.abs(difference))
-    contour = axes[2].contourf(
-        qS_grid,
-        qT_grid,
-        difference,
-        levels=30,
-        cmap="coolwarm",
-        vmin=-limit,
-        vmax=limit,
-    )
-    axes[2].set_xlabel(r"$q_S$ (Ha)", fontsize=20)
-    axes[2].set_ylabel(r"$q_T$ (Ha)", fontsize=20)
-    axes[2].set_title(r"MLE $-$ KDE", fontsize=22)
-    axes[2].tick_params(labelsize=14)
-    fig.colorbar(contour, ax=axes[2], label="Difference (Ha)")
+    for i, (surface, title, cmap) in enumerate(surfaces, start=1):
+        ax = fig.add_subplot(1, 3, i, projection="3d")
+        plotted = ax.plot_surface(
+            qS_grid,
+            qT_grid,
+            surface,
+            cmap=cmap,
+            edgecolor="none",
+            alpha=0.85,
+        )
+        ax.set_xlabel(r"$q_S$ (Ha)", fontsize=16, labelpad=8)
+        ax.set_ylabel(r"$q_T$ (Ha)", fontsize=16, labelpad=8)
+        ax.set_zlabel(
+            "Free energy (Ha)" if i < 3 else "Difference (Ha)",
+            fontsize=16,
+            labelpad=8,
+        )
+        ax.set_title(title, fontsize=20)
+        ax.tick_params(axis="both", labelsize=11)
+        ax.tick_params(axis="z", labelsize=11)
+        ax.view_init(elev=30, azim=-60)
+        fig.colorbar(plotted, ax=ax, shrink=0.65, pad=0.08)
 
     fig.suptitle(
         f"MLE vs KDE: RMSE = {comparison.grid_rmse:.3e} Ha",
