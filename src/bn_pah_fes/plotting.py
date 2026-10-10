@@ -110,17 +110,29 @@ def plot_optimizer_performance(
 def plot_singlet_triplet_gap_histogram(
     data: EnergyData,
     results_dir: Path,
+    beta: float,
 ) -> None:
-    """Plot a histogram of the singlet-triplet gaps qS - qT."""
+    """Plot a q0-reweighted histogram of the singlet-triplet gaps qS - qT."""
     singlet_triplet_gap = data.qS - data.qT
+    weights = np.exp(-beta * data.q0)
+    weights /= weights.sum()
 
     plt.figure(figsize=(8, 6))
     bins = np.histogram_bin_edges(singlet_triplet_gap, bins=30)
-    negative_gap = singlet_triplet_gap[singlet_triplet_gap < 0]
-    nonnegative_gap = singlet_triplet_gap[singlet_triplet_gap >= 0]
+    negative_mask = singlet_triplet_gap < 0
+    negative_gap = singlet_triplet_gap[negative_mask]
+    nonnegative_gap = singlet_triplet_gap[~negative_mask]
 
-    negative_counts, _ = np.histogram(negative_gap, bins=bins)
-    nonnegative_counts, _ = np.histogram(nonnegative_gap, bins=bins)
+    negative_counts, _ = np.histogram(
+        negative_gap,
+        bins=bins,
+        weights=weights[negative_mask],
+    )
+    nonnegative_counts, _ = np.histogram(
+        nonnegative_gap,
+        bins=bins,
+        weights=weights[~negative_mask],
+    )
 
     plt.bar(
         bins[:-1],
@@ -154,7 +166,7 @@ def plot_singlet_triplet_gap_histogram(
     )
 
     plt.xlabel(r"$q_S-q_T$ (Ha)", fontsize=30)
-    plt.ylabel("Count", fontsize=30)
+    plt.ylabel("Reweighted probability", fontsize=30)
     plt.tick_params(axis="both", labelsize=18)
     plt.legend(fontsize=20)
     plt.tight_layout()
