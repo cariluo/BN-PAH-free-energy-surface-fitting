@@ -177,25 +177,26 @@ def plot_singlet_triplet_gap_histogram(
     )
     plt.close()
 
-def plot_surface_minimization_history(
-    histories: dict[str, list[float]],
+def plot_fit_free_energy_history(
+    history: list[float],
     results_dir: Path,
+    model: str,
 ) -> None:
-    """Plot free-energy values during minimization for each surface."""
+    """Plot mean sampled Delta G_PBE over L-BFGS-B fit iterations."""
+    if not history:
+        return
+
+    iterations = np.arange(len(history))
     plt.figure(figsize=(8, 6))
-
-    for surface, history in histories.items():
-        iterations = np.arange(len(history))
-        plt.plot(iterations, history, linewidth=2, label=surface)
-        plt.scatter(iterations, history, s=25, zorder=3)
-
-    plt.xlabel("Minimization iteration", fontsize=30)
-    plt.ylabel(r"Free energy relative to $G_{0,\min}$ (Ha)", fontsize=24)
+    plt.plot(iterations, history, linewidth=2)
+    plt.scatter(iterations, history, s=35, zorder=3)
+    plt.xlabel("Optimization iteration", fontsize=30)
+    plt.ylabel(r"Mean $\Delta G_{\mathrm{PBE}}$ (Ha)", fontsize=24)
+    plt.title(f"{model.replace('_', ' ').title()} model", fontsize=24)
     plt.tick_params(axis="both", labelsize=18)
-    plt.legend(fontsize=20)
     plt.tight_layout()
     plt.savefig(
-        results_dir / "surface_minimization_history.png",
+        results_dir / f"free_energy_history_{model}.png",
         dpi=300,
         bbox_inches="tight",
     )

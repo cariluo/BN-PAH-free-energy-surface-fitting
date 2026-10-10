@@ -27,6 +27,7 @@ class FitResult:
     delta_g_pbe: np.ndarray
     optimization_result: object
     optimization_history: list[float]
+    free_energy_history: list[float]
 
 
 def _integration_grid(q_scaled: np.ndarray, params: Parameters):
@@ -167,9 +168,11 @@ def fit_free_energy(
             )
 
     optimization_history = [negative_log_likelihood(theta0)]
+    free_energy_history = [float(np.mean(evaluate_free_energy(theta0, X)))]
 
     def callback(theta):
         optimization_history.append(negative_log_likelihood(theta))
+        free_energy_history.append(float(np.mean(evaluate_free_energy(theta, X))))
 
     print("Starting optimization...")
     print(f"Number of samples: {len(q)}")
@@ -202,4 +205,5 @@ def fit_free_energy(
         delta_g_pbe=delta_g_pbe,
         optimization_result=result,
         optimization_history=optimization_history,
+        free_energy_history=free_energy_history,
     )

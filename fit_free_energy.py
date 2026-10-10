@@ -14,7 +14,7 @@ from bn_pah_fes.plotting import (
     plot_optimizer_performance,
     plot_energy_correlation,
     plot_singlet_triplet_gap_histogram,
-    plot_surface_minimization_history,
+    plot_fit_free_energy_history,
 )
 from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 
@@ -58,6 +58,11 @@ print(
 fit_result = fit_free_energy(data, params)
 plot_optimizer_performance(
     fit_result.optimization_history,
+    RESULTS_DIR,
+    model=params.model,
+)
+plot_fit_free_energy_history(
+    fit_result.free_energy_history,
     RESULTS_DIR,
     model=params.model,
 )
@@ -106,11 +111,6 @@ for surface, minimum in minima.items():
         f"qT = {minimum.qT:.8f} Ha, "
         f"G = {minimum.value:.8f} Ha"
     )
-
-plot_surface_minimization_history(
-    {surface: minimum.optimization_history for surface, minimum in minima.items()},
-    RESULTS_DIR,
-)
 
 # Plot surfaces
 plot_delta_g_contour(
