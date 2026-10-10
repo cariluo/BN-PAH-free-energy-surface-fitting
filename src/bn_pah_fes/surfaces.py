@@ -43,6 +43,7 @@ class SurfaceMinimum:
     qT: float
     value: float
     success: bool
+    optimization_history: list[float]
 
 
 def _model_functions(params: Parameters):
@@ -225,18 +226,28 @@ def _find_surface_minimum(
         )
         return value_gradient
 
+    optimization_history = [objective(initial_guess)]
+
+    def record_iteration(point):
+        optimization_history.append(objective(point))
+
     result = minimize(
         objective,
         initial_guess,
         jac=gradient,
         method="BFGS",
+        callback=record_iteration,
     )
+
+    if not np.isclose(optimization_history[-1], result.fun):
+        optimization_history.append(float(result.fun))
 
     return SurfaceMinimum(
         qS=float(result.x[0]),
         qT=float(result.x[1]),
         value=float(result.fun),
         success=bool(result.success),
+        optimization_history=optimization_history,
     )
 
 
