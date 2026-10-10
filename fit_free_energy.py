@@ -14,6 +14,7 @@ from bn_pah_fes.plotting import (
     plot_optimizer_performance,
     plot_energy_correlation,
     plot_singlet_triplet_gap_histogram,
+    plot_fit_free_energy_history,
 )
 from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 
@@ -57,6 +58,11 @@ print(
 fit_result = fit_free_energy(data, params)
 plot_optimizer_performance(
     fit_result.optimization_history,
+    RESULTS_DIR,
+    model=params.model,
+)
+plot_fit_free_energy_history(
+    fit_result.free_energy_history,
     RESULTS_DIR,
     model=params.model,
 )
