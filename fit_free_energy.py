@@ -41,8 +41,8 @@ plot_coordinate_time_series(data, RESULTS_DIR)
 # Plot correlation between q0 and qS coordinates
 plot_energy_correlation(data, RESULTS_DIR)
 
-# Plot a histogram of the singlet-triplet gaps
-plot_singlet_triplet_gap_histogram(data, RESULTS_DIR)
+# Plot a q0-reweighted histogram of the singlet-triplet gaps
+plot_singlet_triplet_gap_histogram(data, RESULTS_DIR, params.beta)
 
 # Weighted empirical 2D free-energy surface
 kde_result = calculate_kde_surface(data, params)
