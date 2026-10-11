@@ -391,7 +391,7 @@ def plot_delta_g_contour(
             facecolors="red",
             edgecolors="black",
             linewidths=1.0,
-            label=fr"Minimum: ($q_S$, $q_T$) = ({qS_minimum:.4f}, {qT_minimum:.4f}) Ha",
+            label=fr"Minimum: ($q_S$, $q_T$) = ({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV",
             zorder=5,
         )
     diag_min = max(QS.min(), QT.min())
