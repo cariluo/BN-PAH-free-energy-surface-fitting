@@ -119,12 +119,19 @@ def _project_gap_profile(
         qbar_min = max(qS_grid.min() - 0.5 * gap, qT_grid.min() + 0.5 * gap)
         qbar_max = min(qS_grid.max() - 0.5 * gap, qT_grid.max() + 0.5 * gap)
         qbar_grid = np.linspace(qbar_min, qbar_max, n_integration_points)
+        # Clip only round-off-level excursions at the analytically valid bounds.
+        qS_values = np.clip(
+            qbar_grid + 0.5 * gap, qS_grid.min(), qS_grid.max()
+        )
+        qT_values = np.clip(
+            qbar_grid - 0.5 * gap, qT_grid.min(), qT_grid.max()
+        )
         surface_values = _bilinear_interpolate(
             qS_grid,
             qT_grid,
             surface_data,
-            qbar_grid + 0.5 * gap,
-            qbar_grid - 0.5 * gap,
+            qS_values,
+            qT_values,
         )
         log_weights = np.full(
             n_integration_points,
