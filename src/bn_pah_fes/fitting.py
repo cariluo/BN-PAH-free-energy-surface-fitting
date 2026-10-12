@@ -58,7 +58,7 @@ def _integration_grid(q_scaled: np.ndarray, params: Parameters):
     q_integration = np.column_stack(
         [Q1.ravel(), Q2.ravel(), Q3.ravel()]
     )
-    if params.model == "squared_cubic":
+    if params.model in ("squared_cubic", "cubic"):
         X_integration = polynomial_basis(q_integration)
     elif params.model == "harmonic":
         X_integration = harmonic_basis(q_integration)
@@ -81,7 +81,7 @@ def _free_energy_parameter_gradient(
     if model == "squared_cubic":
         polynomial_values = polynomial(theta, X)
         return 2.0 * polynomial_values[:, None] * X
-    if model == "harmonic":
+    if model in ("cubic", "harmonic"):
         return X
     raise ValueError(f"Unknown free-energy model: {model}")
 
@@ -100,6 +100,10 @@ def fit_free_energy(
     if params.model == "squared_cubic":
         X = polynomial_basis(q_scaled)
         evaluate_free_energy = free_energy
+        n_parameters = 20
+    elif params.model == "cubic":
+        X = polynomial_basis(q_scaled)
+        evaluate_free_energy = polynomial
         n_parameters = 20
     elif params.model == "harmonic":
         X = harmonic_basis(q_scaled)

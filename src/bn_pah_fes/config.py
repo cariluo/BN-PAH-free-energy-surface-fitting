@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass(frozen=True)
@@ -15,7 +16,7 @@ class Parameters:
     n_grid: int = 50
     n_grid_surface: int = 150
     n_q0: int = 150
-    model: str = "squared_cubic"
+    model: Literal["squared_cubic", "cubic", "harmonic"] = "squared_cubic"
 
     @property
     def kBT(self) -> float:
