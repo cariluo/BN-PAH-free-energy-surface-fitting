@@ -25,6 +25,7 @@ AXIS_TICK_FONTSIZE = 15
 AXIS_LABEL_PAD = 15
 COLORBAR_SHRINK = 0.7
 COLORBAR_PAD = 0.1
+MINIMUM_ANNOTATION_FONTSIZE = 30
 HARTREE_TO_EV = 27.211386245988
 
 
@@ -351,7 +352,7 @@ def plot_3d_free_energy_surface(
     if minimum is not None:
         qS_minimum, qT_minimum, G_minimum = minimum
         minimum_label = (
-            fr"Continuous minimum: ($q_S$, $q_T$) = "
+            fr"Min: ($q_S$, $q_T$) = "
             fr"({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV"
         )
         ax.text2D(
@@ -360,7 +361,7 @@ def plot_3d_free_energy_surface(
             minimum_label,
             transform=ax.transAxes,
             va="top",
-            fontsize=16,
+            fontsize=MINIMUM_ANNOTATION_FONTSIZE,
         )
         if _minimum_is_in_grid(minimum, QS, QT):
             ax.scatter(
@@ -372,9 +373,7 @@ def plot_3d_free_energy_surface(
                 facecolor="red",
                 edgecolor="black",
                 linewidth=1.0,
-                label="Continuous minimum",
             )
-            ax.legend(loc="best", fontsize=20)
     ax.set_xlabel(
         r"$q_S$ (eV)",
         fontsize=AXIS_LABEL_FONTSIZE,
@@ -449,7 +448,7 @@ def plot_delta_g_contour(
             minimum_label,
             transform=plt.gca().transAxes,
             va="top",
-            fontsize=16,
+            fontsize=MINIMUM_ANNOTATION_FONTSIZE,
         )
         if _minimum_is_in_grid(minimum, QS, QT):
             plt.scatter(
@@ -460,7 +459,6 @@ def plot_delta_g_contour(
                 facecolors="red",
                 edgecolors="black",
                 linewidths=1.0,
-                label="Continuous minimum",
                 zorder=5,
             )
     diag_min = max(QS.min(), QT.min())
