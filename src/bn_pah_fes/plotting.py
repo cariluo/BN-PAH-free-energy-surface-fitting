@@ -88,31 +88,6 @@ def plot_energy_correlation(
 
 
 
-def plot_optimizer_performance(
-    history: list[float],
-    results_dir: Path,
-    model: str,
-    filename: str | None = None,
-) -> None:
-    """Plot the MLE objective as a function of optimizer iteration."""
-    if not history:
-        return
-
-    iterations = np.arange(len(history))
-    if filename is None:
-        filename = f"optimizer_performance_{model}.png"
-
-    plt.figure(figsize=(8, 6))
-    plt.plot(iterations, history, linewidth=2)
-    plt.scatter(iterations, history, s=35, zorder=3)
-    plt.xlabel("Optimization iteration", fontsize=30)
-    plt.ylabel("MLE Objective", fontsize=30)
-    plt.title(f"{model.replace('_', ' ').title()} model", fontsize=24)
-    plt.tick_params(axis="both", labelsize=18)
-    plt.tight_layout()
-    plt.savefig(results_dir / filename, dpi=300, bbox_inches="tight")
-    plt.close()
-
 def plot_singlet_triplet_gap_histogram(
     data: EnergyData,
     results_dir: Path,
