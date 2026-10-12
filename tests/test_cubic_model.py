@@ -8,7 +8,7 @@ from bn_pah_fes.polynomial import (
     polynomial_basis,
     polynomial_gradient,
 )
-from bn_pah_fes.plotting import _extract_diagonal_profile
+from bn_pah_fes.plotting import _project_gap_profile
 from bn_pah_fes.surfaces import _model_functions
 
 
@@ -61,14 +61,19 @@ def test_cubic_surface_model_is_unsquared() -> None:
     assert_allclose(gradient(theta, points), polynomial_gradient(theta, points))
 
 
-def test_extract_diagonal_profile_interpolates_qs_equals_qt() -> None:
-    """The diagonal helper returns the exact qS=qT cut of an affine surface."""
-    qS_grid = np.array([0.0, 1.0, 2.0])
-    qT_grid = np.array([-1.0, 1.0, 3.0])
-    surface = 2.0 * qS_grid[:, None] - 3.0 * qT_grid[None, :] + 1.0
+def test_projected_singlet_and_triplet_profiles_differ_by_gap() -> None:
+    """Projection retains the qS-qT offset between singlet and triplet profiles."""
+    qS_grid = np.linspace(-2.0, 2.0, 7)
+    qT_grid = np.linspace(-2.0, 2.0, 7)
+    G0_surface = np.zeros((len(qS_grid), len(qT_grid)))
+    GS_surface = G0_surface + qS_grid[:, None]
+    GT_surface = G0_surface + qT_grid[None, :]
 
-    q_diagonal, values = _extract_diagonal_profile(
-        qS_grid, qT_grid, surface, n_points=5
+    gap_grid, GS_profile = _project_gap_profile(
+        qS_grid, qT_grid, GS_surface, beta=1.0, n_gap_points=5
+    )
+    _, GT_profile = _project_gap_profile(
+        qS_grid, qT_grid, GT_surface, beta=1.0, n_gap_points=5
     )
 
-    assert_allclose(values, 1.0 - q_diagonal)
+    assert_allclose(GS_profile - GT_profile, gap_grid)

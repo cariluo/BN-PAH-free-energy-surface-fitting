@@ -15,7 +15,7 @@ from bn_pah_fes.plotting import (
     plot_singlet_triplet_gap_histogram,
     plot_fit_free_energy_history,
     plot_likelihood_convergence,
-    plot_singlet_triplet_diagonal,
+    plot_singlet_triplet_gap_profiles,
 )
 from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 
@@ -104,12 +104,13 @@ G0_sampled = surface_result.G0_sampled
 GS_sampled = surface_result.GS_sampled
 GT_sampled = surface_result.GT_sampled
 
-# Diagonal qS=qT cut of the singlet and triplet free-energy surfaces.
-plot_singlet_triplet_diagonal(
+# Singlet and triplet free-energy profiles projected onto q = qS - qT.
+plot_singlet_triplet_gap_profiles(
     surface_result.qS_grid,
     surface_result.qT_grid,
     GS_surface,
     GT_surface,
+    params.beta,
     RESULTS_DIR,
 )
 
