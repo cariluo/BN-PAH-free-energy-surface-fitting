@@ -25,6 +25,12 @@ AXIS_TICK_FONTSIZE = 15
 AXIS_LABEL_PAD = 15
 COLORBAR_SHRINK = 0.7
 COLORBAR_PAD = 0.1
+HARTREE_TO_EV = 27.211386245988
+
+
+def _to_ev(values: np.ndarray | float | list[float]) -> np.ndarray:
+    """Convert scalar or array-like Hartree values to electronvolts for plotting."""
+    return np.asarray(values) * HARTREE_TO_EV
 
 
 def plot_coordinate_time_series(
@@ -33,16 +39,16 @@ def plot_coordinate_time_series(
 ) -> None:
     """Plot all and subsampled q0, qS, and qT trajectories."""
     fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
-    axes[0].scatter(data.idx_all, data.q0_all, s=2, label="All")
-    axes[0].scatter(data.idx, data.q0, s=16, label="Subsampled")
-    axes[0].set_ylabel(r"$q_0$", fontsize=30)
+    axes[0].scatter(data.idx_all, _to_ev(data.q0_all), s=2, label="All")
+    axes[0].scatter(data.idx, _to_ev(data.q0), s=16, label="Subsampled")
+    axes[0].set_ylabel(r"$q_0$ (eV)", fontsize=30)
     axes[0].legend(fontsize=10)
-    axes[1].scatter(data.idx_all, data.qS_all, s=2)
-    axes[1].scatter(data.idx, data.qS, s=16)
-    axes[1].set_ylabel(r"$q_S$", fontsize=30)
-    axes[2].scatter(data.idx_all, data.qT_all, s=2)
-    axes[2].scatter(data.idx, data.qT, s=16)
-    axes[2].set_ylabel(r"$q_T$", fontsize=30)
+    axes[1].scatter(data.idx_all, _to_ev(data.qS_all), s=2)
+    axes[1].scatter(data.idx, _to_ev(data.qS), s=16)
+    axes[1].set_ylabel(r"$q_S$ (eV)", fontsize=30)
+    axes[2].scatter(data.idx_all, _to_ev(data.qT_all), s=2)
+    axes[2].scatter(data.idx, _to_ev(data.qT), s=16)
+    axes[2].set_ylabel(r"$q_T$ (eV)", fontsize=30)
     plt.tight_layout()
     plt.savefig(results_dir / "coordinate_time_series.png", dpi=300)
     plt.close()
@@ -55,8 +61,8 @@ def plot_energy_correlation(
     """Plot the correlation between q0 and qS coordinates."""
     plt.figure(figsize=(8, 6))
     plt.scatter(
-        data.q0,
-        data.qS,
+        _to_ev(data.q0),
+        _to_ev(data.qS),
         s=20,
         facecolors="white",
         edgecolors="black",
@@ -66,14 +72,14 @@ def plot_energy_correlation(
     slope, intercept = np.polyfit(data.q0, data.qS, 1)
     x_fit = np.linspace(data.q0.min(), data.q0.max(), 200)
     plt.plot(
-        x_fit,
-        slope * x_fit + intercept,
+        _to_ev(x_fit),
+        _to_ev(slope * x_fit + intercept),
         linewidth=2,
         label=fr"$r = {np.corrcoef(data.q0, data.qS)[0, 1]:.4f}$",
     )
 
-    plt.xlabel(r"$q_0$ (Ha)", fontsize=30)
-    plt.ylabel(r"$q_S$ (Ha)", fontsize=30)
+    plt.xlabel(r"$q_0$ (eV)", fontsize=30)
+    plt.ylabel(r"$q_S$ (eV)", fontsize=30)
     plt.tick_params(axis="both", labelsize=18)
     plt.legend(fontsize=20)
     plt.tight_layout()
@@ -113,7 +119,7 @@ def plot_singlet_triplet_gap_histogram(
     beta: float,
 ) -> None:
     """Plot a q0-reweighted histogram of the singlet-triplet gaps qS - qT."""
-    singlet_triplet_gap = data.qS - data.qT
+    singlet_triplet_gap = _to_ev(data.qS - data.qT)
     weights = np.exp(-beta * data.q0)
     weights /= weights.sum()
 
@@ -162,10 +168,10 @@ def plot_singlet_triplet_gap_histogram(
         x_fit,
         gaussian,
         linewidth=2,
-        label=f"$\\mu = {mean:.4f}$ Ha\n$\\sigma = {std:.4f}$ Ha",
+        label=f"$\\mu = {mean:.4f}$ eV\n$\\sigma = {std:.4f}$ eV",
     )
 
-    plt.xlabel(r"$q_S-q_T$ (Ha)", fontsize=30)
+    plt.xlabel(r"$q_S-q_T$ (eV)", fontsize=30)
     plt.ylabel("Reweighted probability", fontsize=30)
     plt.tick_params(axis="both", labelsize=18)
     plt.legend(fontsize=20)
@@ -188,10 +194,10 @@ def plot_fit_free_energy_history(
 
     iterations = np.arange(len(history))
     plt.figure(figsize=(8, 6))
-    plt.plot(iterations, history, linewidth=2)
-    plt.scatter(iterations, history, s=35, zorder=3)
+    plt.plot(iterations, _to_ev(np.asarray(history)), linewidth=2)
+    plt.scatter(iterations, _to_ev(np.asarray(history)), s=35, zorder=3)
     plt.xlabel("Optimization iteration", fontsize=30)
-    plt.ylabel(r"Mean $\Delta G_{\mathrm{PBE}}$ (Ha)", fontsize=24)
+    plt.ylabel(r"Mean $\Delta G_{\mathrm{PBE}}$ (eV)", fontsize=24)
     plt.title(f"{model.replace('_', ' ').title()} model", fontsize=24)
     plt.tick_params(axis="both", labelsize=18)
     plt.tight_layout()
@@ -214,49 +220,49 @@ def plot_kde_surface(
     ax = fig.add_subplot(111, projection="3d")
     ax.view_init(elev=SURFACE_VIEW[0], azim=SURFACE_VIEW[1])
     surface = ax.plot_surface(
-        kde_result.QS,
-        kde_result.QT,
-        kde_result.free_energy,
+        _to_ev(kde_result.QS),
+        _to_ev(kde_result.QT),
+        _to_ev(kde_result.free_energy),
         cmap=SURFACE_CMAP,
         edgecolor=SURFACE_EDGE_COLOR,
         alpha=SURFACE_ALPHA,
-        vmin=None if surface_limits is None else surface_limits[0],
-        vmax=None if surface_limits is None else surface_limits[1],
+        vmin=None if surface_limits is None else _to_ev(surface_limits[0]),
+        vmax=None if surface_limits is None else _to_ev(surface_limits[1]),
     )
     ax.scatter(
-        data.qS,
-        data.qT,
-        kde_result.sampled_free_energy + 0.01,
+        _to_ev(data.qS),
+        _to_ev(data.qT),
+        _to_ev(kde_result.sampled_free_energy + 0.01),
         s=SAMPLE_SIZE,
         facecolor=SAMPLE_FACE_COLOR,
         edgecolor=SAMPLE_EDGE_COLOR,
         alpha=SAMPLE_ALPHA,
     )
     ax.set_xlabel(
-        r"$q_S$ (Ha)",
+        r"$q_S$ (eV)",
         fontsize=AXIS_LABEL_FONTSIZE,
         labelpad=AXIS_LABEL_PAD,
     )
     ax.set_ylabel(
-        r"$q_T$ (Ha)",
+        r"$q_T$ (eV)",
         fontsize=AXIS_LABEL_FONTSIZE,
         labelpad=AXIS_LABEL_PAD,
     )
     ax.set_zlabel(
-        r"$-k_BT\ln P(q_S,q_T)$ (Ha)",
+        r"$-k_BT\ln P(q_S,q_T)$ (eV)",
         fontsize=AXIS_LABEL_FONTSIZE,
         labelpad=AXIS_LABEL_PAD,
     )
     ax.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
     ax.tick_params(axis="z", labelsize=AXIS_TICK_FONTSIZE)
     if surface_limits is not None:
-        ax.set_zlim(*surface_limits)
+        ax.set_zlim(*_to_ev(np.asarray(surface_limits)))
     fig.colorbar(
         surface,
         ax=ax,
         shrink=COLORBAR_SHRINK,
         pad=COLORBAR_PAD,
-        #label=r"$-k_BT\ln P(q_S,q_T)$ (Ha)",
+        #label=r"$-k_BT\ln P(q_S,q_T)$ (eV)",
     )
     plt.tight_layout()
     plt.savefig(results_dir / "KDE.png", dpi=300)
@@ -281,19 +287,19 @@ def plot_3d_free_energy_surface(
     ax = fig.add_subplot(111, projection="3d")
     ax.view_init(elev=SURFACE_VIEW[0], azim=SURFACE_VIEW[1])
     surface = ax.plot_surface(
-        QS,
-        QT,
-        surface_data,
+        _to_ev(QS),
+        _to_ev(QT),
+        _to_ev(surface_data),
         cmap=SURFACE_CMAP,
         edgecolor=SURFACE_EDGE_COLOR,
         alpha=SURFACE_ALPHA,
-        vmin=None if surface_limits is None else surface_limits[0],
-        vmax=None if surface_limits is None else surface_limits[1],
+        vmin=None if surface_limits is None else _to_ev(surface_limits[0]),
+        vmax=None if surface_limits is None else _to_ev(surface_limits[1]),
     )
     ax.scatter(
-        q[:, 1],
-        q[:, 2],
-        sampled,
+        _to_ev(q[:, 1]),
+        _to_ev(q[:, 2]),
+        _to_ev(sampled),
         s=SAMPLE_SIZE,
         facecolor=SAMPLE_FACE_COLOR,
         edgecolor=SAMPLE_EDGE_COLOR,
@@ -302,24 +308,24 @@ def plot_3d_free_energy_surface(
     if minimum is not None:
         qS_minimum, qT_minimum, G_minimum = minimum
         ax.scatter(
-            qS_minimum,
-            qT_minimum,
-            G_minimum,
+            _to_ev(qS_minimum),
+            _to_ev(qT_minimum),
+            _to_ev(G_minimum),
             marker="*",
             s=180,
             facecolor="red",
             edgecolor="black",
             linewidth=1.0,
-            label=fr"Minimum: ($q_S$, $q_T$) = ({qS_minimum:.4f}, {qT_minimum:.4f}) Ha",
+            label=fr"Minimum: ($q_S$, $q_T$) = ({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV",
         )
         ax.legend(loc="best", fontsize=20)
     ax.set_xlabel(
-        r"$q_S$ (Ha)",
+        r"$q_S$ (eV)",
         fontsize=AXIS_LABEL_FONTSIZE,
         labelpad=AXIS_LABEL_PAD,
     )
     ax.set_ylabel(
-        r"$q_T$ (Ha)",
+        r"$q_T$ (eV)",
         fontsize=AXIS_LABEL_FONTSIZE,
         labelpad=AXIS_LABEL_PAD,
     )
@@ -331,7 +337,7 @@ def plot_3d_free_energy_surface(
     ax.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
     ax.tick_params(axis="z", labelsize=AXIS_TICK_FONTSIZE)
     if surface_limits is not None:
-        ax.set_zlim(*surface_limits)
+        ax.set_zlim(*_to_ev(np.asarray(surface_limits)))
     cbar = fig.colorbar(
         surface,
         ax=ax,
@@ -360,17 +366,17 @@ def plot_delta_g_contour(
     """Plot a 2D free-energy contour with sampled points and qT=qS."""
     plt.figure(figsize=(8, 6))
     contour = plt.contourf(
-        QS,
-        QT,
-        surface_data,
+        _to_ev(QS),
+        _to_ev(QT),
+        _to_ev(surface_data),
         levels=30,
         vmin=0.0,
-        vmax=0.65,
+        vmax=_to_ev(0.65),
         cmap="viridis",
     )
     plt.scatter(
-        q[:, 1],
-        q[:, 2],
+        _to_ev(q[:, 1]),
+        _to_ev(q[:, 2]),
         facecolors="white",
         edgecolors="black",
         label=f"{samples_in_fit} sampled points",
@@ -378,33 +384,33 @@ def plot_delta_g_contour(
     if minimum is not None:
         qS_minimum, qT_minimum, _ = minimum
         plt.scatter(
-            qS_minimum,
-            qT_minimum,
+            _to_ev(qS_minimum),
+            _to_ev(qT_minimum),
             marker="*",
             s=220,
             facecolors="red",
             edgecolors="black",
             linewidths=1.0,
-            label=fr"Minimum: ($q_S$, $q_T$) = ({qS_minimum:.4f}, {qT_minimum:.4f}) Ha",
+            label=fr"Minimum: ($q_S$, $q_T$) = ({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV",
             zorder=5,
         )
     diag_min = max(QS.min(), QT.min())
     diag_max = min(QS.max(), QT.max())
     plt.plot(
-        [diag_min, diag_max],
-        [diag_min, diag_max],
+        _to_ev([diag_min, diag_max]),
+        _to_ev([diag_min, diag_max]),
         color="white",
         linestyle="--",
         linewidth=2,
         label=r"$q_T=q_S$",
     )
     plt.legend(loc="best", fontsize=20)
-    plt.xlabel(r"$q_S$ (Ha)", fontsize=20)
-    plt.ylabel(r"$q_T$ (Ha)", fontsize=20)
+    plt.xlabel(r"$q_S$ (eV)", fontsize=20)
+    plt.ylabel(r"$q_T$ (eV)", fontsize=20)
     plt.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
     cbar = plt.colorbar(
         contour,
-        ticks=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+        ticks=_to_ev([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]),
     )
     cbar.set_label(cbarlabel, fontsize=20)
     cbar.ax.tick_params(labelsize=AXIS_TICK_FONTSIZE)
