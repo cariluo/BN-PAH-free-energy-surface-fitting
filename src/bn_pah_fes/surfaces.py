@@ -49,6 +49,8 @@ def _model_functions(params: Parameters):
     """Return the basis, free-energy, and gradient functions for the model."""
     if params.model == "squared_cubic":
         return polynomial_basis, free_energy, polynomial_gradient, True
+    if params.model == "cubic":
+        return polynomial_basis, polynomial, polynomial_gradient, False
     if params.model == "harmonic":
         return harmonic_basis, harmonic_free_energy, harmonic_gradient, False
     raise ValueError(f"Unknown free-energy model: {params.model}")
