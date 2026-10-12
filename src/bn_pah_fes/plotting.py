@@ -345,20 +345,33 @@ def plot_3d_free_energy_surface(
     ax.set_ylim(*_to_ev([QT.min(), QT.max()]))
     ax.set_zlim(*_to_ev(z_limits))
 
-    if minimum is not None and _minimum_is_in_grid(minimum, QS, QT):
+    if minimum is not None:
         qS_minimum, qT_minimum, G_minimum = minimum
-        ax.scatter(
-            _to_ev(qS_minimum),
-            _to_ev(qT_minimum),
-            _to_ev(G_minimum),
-            marker="*",
-            s=180,
-            facecolor="red",
-            edgecolor="black",
-            linewidth=1.0,
-            label=fr"Minimum: ($q_S$, $q_T$) = ({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV",
+        minimum_label = (
+            fr"Continuous minimum: ($q_S$, $q_T$) = "
+            fr"({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV"
         )
-        ax.legend(loc="best", fontsize=20)
+        ax.text2D(
+            0.02,
+            0.98,
+            minimum_label,
+            transform=ax.transAxes,
+            va="top",
+            fontsize=16,
+        )
+        if _minimum_is_in_grid(minimum, QS, QT):
+            ax.scatter(
+                _to_ev(qS_minimum),
+                _to_ev(qT_minimum),
+                _to_ev(G_minimum),
+                marker="*",
+                s=180,
+                facecolor="red",
+                edgecolor="black",
+                linewidth=1.0,
+                label="Continuous minimum",
+            )
+            ax.legend(loc="best", fontsize=20)
     ax.set_xlabel(
         r"$q_S$ (eV)",
         fontsize=AXIS_LABEL_FONTSIZE,
@@ -424,7 +437,19 @@ def plot_delta_g_contour(
 
     if minimum is not None:
         qS_minimum, qT_minimum, _ = minimum
-        if QS.min() <= qS_minimum <= QS.max() and QT.min() <= qT_minimum <= QT.max():
+        minimum_label = (
+            fr"Continuous minimum: ($q_S$, $q_T$) = "
+            fr"({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV"
+        )
+        plt.gca().text(
+            0.02,
+            0.98,
+            minimum_label,
+            transform=plt.gca().transAxes,
+            va="top",
+            fontsize=16,
+        )
+        if _minimum_is_in_grid(minimum, QS, QT):
             plt.scatter(
                 _to_ev(qS_minimum),
                 _to_ev(qT_minimum),
@@ -433,7 +458,7 @@ def plot_delta_g_contour(
                 facecolors="red",
                 edgecolors="black",
                 linewidths=1.0,
-                label=fr"Minimum: ($q_S$, $q_T$) = ({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV",
+                label="Continuous minimum",
                 zorder=5,
             )
     diag_min = max(QS.min(), QT.min())
