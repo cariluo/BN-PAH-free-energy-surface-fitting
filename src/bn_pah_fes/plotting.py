@@ -33,6 +33,19 @@ def _to_ev(values: np.ndarray | float | list[float]) -> np.ndarray:
     return np.asarray(values) * HARTREE_TO_EV
 
 
+def _minimum_is_in_grid(
+    minimum: tuple[float, float, float],
+    QS: np.ndarray,
+    QT: np.ndarray,
+) -> bool:
+    """Return whether a continuous minimum lies within the surface grid."""
+    qS_minimum, qT_minimum, _ = minimum
+    return (
+        QS.min() <= qS_minimum <= QS.max()
+        and QT.min() <= qT_minimum <= QT.max()
+    )
+
+
 def plot_coordinate_time_series(
     data: EnergyData,
     results_dir: Path,
@@ -317,20 +330,48 @@ def plot_3d_free_energy_surface(
         edgecolor=SAMPLE_EDGE_COLOR,
         alpha=SAMPLE_ALPHA,
     )
+    z_limits = (
+        surface_limits
+        if surface_limits is not None
+        else (float(surface_data.min()), float(surface_data.max()))
+    )
+    if minimum is not None and _minimum_is_in_grid(minimum, QS, QT):
+        z_limits = (
+            min(z_limits[0], minimum[2]),
+            max(z_limits[1], minimum[2]),
+        )
+
+    ax.set_xlim(*_to_ev([QS.min(), QS.max()]))
+    ax.set_ylim(*_to_ev([QT.min(), QT.max()]))
+    ax.set_zlim(*_to_ev(z_limits))
+
     if minimum is not None:
         qS_minimum, qT_minimum, G_minimum = minimum
-        ax.scatter(
-            _to_ev(qS_minimum),
-            _to_ev(qT_minimum),
-            _to_ev(G_minimum),
-            marker="*",
-            s=180,
-            facecolor="red",
-            edgecolor="black",
-            linewidth=1.0,
-            label=fr"Minimum: ($q_S$, $q_T$) = ({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV",
+        minimum_label = (
+            fr"Continuous minimum: ($q_S$, $q_T$) = "
+            fr"({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV"
         )
-        ax.legend(loc="best", fontsize=20)
+        ax.text2D(
+            0.02,
+            0.98,
+            minimum_label,
+            transform=ax.transAxes,
+            va="top",
+            fontsize=16,
+        )
+        if _minimum_is_in_grid(minimum, QS, QT):
+            ax.scatter(
+                _to_ev(qS_minimum),
+                _to_ev(qT_minimum),
+                _to_ev(G_minimum),
+                marker="*",
+                s=180,
+                facecolor="red",
+                edgecolor="black",
+                linewidth=1.0,
+                label="Continuous minimum",
+            )
+            ax.legend(loc="best", fontsize=20)
     ax.set_xlabel(
         r"$q_S$ (eV)",
         fontsize=AXIS_LABEL_FONTSIZE,
@@ -348,8 +389,6 @@ def plot_3d_free_energy_surface(
     )
     ax.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
     ax.tick_params(axis="z", labelsize=AXIS_TICK_FONTSIZE)
-    if surface_limits is not None:
-        ax.set_zlim(*_to_ev(np.asarray(surface_limits)))
     cbar = fig.colorbar(
         surface,
         ax=ax,
@@ -393,19 +432,35 @@ def plot_delta_g_contour(
         edgecolors="black",
         label=f"{samples_in_fit} sampled points",
     )
+    plt.xlim(*_to_ev([QS.min(), QS.max()]))
+    plt.ylim(*_to_ev([QT.min(), QT.max()]))
+
     if minimum is not None:
         qS_minimum, qT_minimum, _ = minimum
-        plt.scatter(
-            _to_ev(qS_minimum),
-            _to_ev(qT_minimum),
-            marker="*",
-            s=220,
-            facecolors="red",
-            edgecolors="black",
-            linewidths=1.0,
-            label=fr"Minimum: ($q_S$, $q_T$) = ({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV",
-            zorder=5,
+        minimum_label = (
+            fr"Continuous minimum: ($q_S$, $q_T$) = "
+            fr"({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV"
         )
+        plt.gca().text(
+            0.02,
+            0.98,
+            minimum_label,
+            transform=plt.gca().transAxes,
+            va="top",
+            fontsize=16,
+        )
+        if _minimum_is_in_grid(minimum, QS, QT):
+            plt.scatter(
+                _to_ev(qS_minimum),
+                _to_ev(qT_minimum),
+                marker="*",
+                s=220,
+                facecolors="red",
+                edgecolors="black",
+                linewidths=1.0,
+                label="Continuous minimum",
+                zorder=5,
+            )
     diag_min = max(QS.min(), QT.min())
     diag_max = min(QS.max(), QT.max())
     plt.plot(
