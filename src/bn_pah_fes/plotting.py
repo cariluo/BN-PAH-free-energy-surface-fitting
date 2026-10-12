@@ -28,9 +28,9 @@ COLORBAR_PAD = 0.1
 HARTREE_TO_EV = 27.211386245988
 
 
-def _to_ev(values: np.ndarray | float) -> np.ndarray | float:
-    """Convert Hartree-valued quantities to electronvolts for plotting."""
-    return values * HARTREE_TO_EV
+def _to_ev(values: np.ndarray | float | list[float]) -> np.ndarray:
+    """Convert scalar or array-like Hartree values to electronvolts for plotting."""
+    return np.asarray(values) * HARTREE_TO_EV
 
 
 def plot_coordinate_time_series(
@@ -293,8 +293,8 @@ def plot_3d_free_energy_surface(
         cmap=SURFACE_CMAP,
         edgecolor=SURFACE_EDGE_COLOR,
         alpha=SURFACE_ALPHA,
-        vmin=None if surface_limits is None else surface_limits[0],
-        vmax=None if surface_limits is None else surface_limits[1],
+        vmin=None if surface_limits is None else _to_ev(surface_limits[0]),
+        vmax=None if surface_limits is None else _to_ev(surface_limits[1]),
     )
     ax.scatter(
         _to_ev(q[:, 1]),
@@ -410,7 +410,7 @@ def plot_delta_g_contour(
     plt.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
     cbar = plt.colorbar(
         contour,
-        ticks=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+        ticks=_to_ev([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]),
     )
     cbar.set_label(cbarlabel, fontsize=20)
     cbar.ax.tick_params(labelsize=AXIS_TICK_FONTSIZE)
