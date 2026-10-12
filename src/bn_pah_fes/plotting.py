@@ -33,18 +33,16 @@ def _to_ev(values: np.ndarray | float | list[float]) -> np.ndarray:
     return np.asarray(values) * HARTREE_TO_EV
 
 
-def _minimum_is_visible(
+def _minimum_is_in_grid(
     minimum: tuple[float, float, float],
     QS: np.ndarray,
     QT: np.ndarray,
-    z_limits: tuple[float, float],
 ) -> bool:
-    """Return whether a continuous minimum lies inside the displayed grid."""
-    qS_minimum, qT_minimum, G_minimum = minimum
+    """Return whether a continuous minimum lies within the surface grid."""
+    qS_minimum, qT_minimum, _ = minimum
     return (
         QS.min() <= qS_minimum <= QS.max()
         and QT.min() <= qT_minimum <= QT.max()
-        and z_limits[0] <= G_minimum <= z_limits[1]
     )
 
 
@@ -337,13 +335,17 @@ def plot_3d_free_energy_surface(
         if surface_limits is not None
         else (float(surface_data.min()), float(surface_data.max()))
     )
+    if minimum is not None and _minimum_is_in_grid(minimum, QS, QT):
+        z_limits = (
+            min(z_limits[0], minimum[2]),
+            max(z_limits[1], minimum[2]),
+        )
+
     ax.set_xlim(*_to_ev([QS.min(), QS.max()]))
     ax.set_ylim(*_to_ev([QT.min(), QT.max()]))
     ax.set_zlim(*_to_ev(z_limits))
 
-    if minimum is not None and _minimum_is_visible(
-        minimum, QS, QT, z_limits
-    ):
+    if minimum is not None and _minimum_is_in_grid(minimum, QS, QT):
         qS_minimum, qT_minimum, G_minimum = minimum
         ax.scatter(
             _to_ev(qS_minimum),
