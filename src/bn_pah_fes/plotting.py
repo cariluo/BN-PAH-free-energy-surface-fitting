@@ -44,7 +44,11 @@ def _minimum_is_in_grid(
     qS_minimum, qT_minimum, _ = minimum
     return (
         QS.min() <= qS_minimum <= QS.max()
-        and QT.min(def _bilinear_interpolate(
+        and QT.min() <= qT_minimum <= QT.max()
+    )
+
+
+def _bilinear_interpolate(
     qS_grid: np.ndarray,
     qT_grid: np.ndarray,
     surface_data: np.ndarray,
