@@ -33,6 +33,21 @@ def _to_ev(values: np.ndarray | float | list[float]) -> np.ndarray:
     return np.asarray(values) * HARTREE_TO_EV
 
 
+def _minimum_is_visible(
+    minimum: tuple[float, float, float],
+    QS: np.ndarray,
+    QT: np.ndarray,
+    z_limits: tuple[float, float],
+) -> bool:
+    """Return whether a continuous minimum lies inside the displayed grid."""
+    qS_minimum, qT_minimum, G_minimum = minimum
+    return (
+        QS.min() <= qS_minimum <= QS.max()
+        and QT.min() <= qT_minimum <= QT.max()
+        and z_limits[0] <= G_minimum <= z_limits[1]
+    )
+
+
 def plot_coordinate_time_series(
     data: EnergyData,
     results_dir: Path,
@@ -317,7 +332,18 @@ def plot_3d_free_energy_surface(
         edgecolor=SAMPLE_EDGE_COLOR,
         alpha=SAMPLE_ALPHA,
     )
-    if minimum is not None:
+    z_limits = (
+        surface_limits
+        if surface_limits is not None
+        else (float(surface_data.min()), float(surface_data.max()))
+    )
+    ax.set_xlim(*_to_ev([QS.min(), QS.max()]))
+    ax.set_ylim(*_to_ev([QT.min(), QT.max()]))
+    ax.set_zlim(*_to_ev(z_limits))
+
+    if minimum is not None and _minimum_is_visible(
+        minimum, QS, QT, z_limits
+    ):
         qS_minimum, qT_minimum, G_minimum = minimum
         ax.scatter(
             _to_ev(qS_minimum),
@@ -348,8 +374,6 @@ def plot_3d_free_energy_surface(
     )
     ax.tick_params(axis="both", labelsize=AXIS_TICK_FONTSIZE)
     ax.tick_params(axis="z", labelsize=AXIS_TICK_FONTSIZE)
-    if surface_limits is not None:
-        ax.set_zlim(*_to_ev(np.asarray(surface_limits)))
     cbar = fig.colorbar(
         surface,
         ax=ax,
@@ -393,19 +417,23 @@ def plot_delta_g_contour(
         edgecolors="black",
         label=f"{samples_in_fit} sampled points",
     )
+    plt.xlim(*_to_ev([QS.min(), QS.max()]))
+    plt.ylim(*_to_ev([QT.min(), QT.max()]))
+
     if minimum is not None:
         qS_minimum, qT_minimum, _ = minimum
-        plt.scatter(
-            _to_ev(qS_minimum),
-            _to_ev(qT_minimum),
-            marker="*",
-            s=220,
-            facecolors="red",
-            edgecolors="black",
-            linewidths=1.0,
-            label=fr"Minimum: ($q_S$, $q_T$) = ({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV",
-            zorder=5,
-        )
+        if QS.min() <= qS_minimum <= QS.max() and QT.min() <= qT_minimum <= QT.max():
+            plt.scatter(
+                _to_ev(qS_minimum),
+                _to_ev(qT_minimum),
+                marker="*",
+                s=220,
+                facecolors="red",
+                edgecolors="black",
+                linewidths=1.0,
+                label=fr"Minimum: ($q_S$, $q_T$) = ({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV",
+                zorder=5,
+            )
     diag_min = max(QS.min(), QT.min())
     diag_max = min(QS.max(), QT.max())
     plt.plot(
