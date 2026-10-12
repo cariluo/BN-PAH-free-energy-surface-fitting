@@ -25,7 +25,7 @@ AXIS_TICK_FONTSIZE = 15
 AXIS_LABEL_PAD = 15
 COLORBAR_SHRINK = 0.7
 COLORBAR_PAD = 0.1
-MINIMUM_ANNOTATION_FONTSIZE = 20
+MINIMUM_ANNOTATION_FONTSIZE = 30
 HARTREE_TO_EV = 27.211386245988
 
 
@@ -352,7 +352,7 @@ def plot_3d_free_energy_surface(
     if minimum is not None:
         qS_minimum, qT_minimum, G_minimum = minimum
         minimum_label = (
-            fr"Continuous minimum: ($q_S$, $q_T$) = "
+            fr"Min: ($q_S$, $q_T$) = "
             fr"({_to_ev(qS_minimum):.4f}, {_to_ev(qT_minimum):.4f}) eV"
         )
         ax.text2D(
