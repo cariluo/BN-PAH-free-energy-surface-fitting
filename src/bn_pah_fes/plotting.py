@@ -47,6 +47,85 @@ def _minimum_is_in_grid(
     )
 
 
+def _extract_diagonal_profile(
+    qS_grid: np.ndarray,
+    qT_grid: np.ndarray,
+    surface_data: np.ndarray,
+    n_points: int | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Interpolate a surface along its qS=qT diagonal."""
+    diagonal_min = max(qS_grid.min(), qT_grid.min())
+    diagonal_max = min(qS_grid.max(), qT_grid.max())
+    if diagonal_min >= diagonal_max:
+        raise ValueError("qS and qT grids must overlap to extract their diagonal.")
+
+    n_points = n_points or max(len(qS_grid), len(qT_grid))
+    q_diagonal = np.linspace(diagonal_min, diagonal_max, n_points)
+    qT_indices = np.searchsorted(qT_grid, q_diagonal, side="left")
+    qT_indices = np.clip(qT_indices, 1, len(qT_grid) - 1)
+    qS_indices = np.searchsorted(qS_grid, q_diagonal, side="left")
+    qS_indices = np.clip(qS_indices, 1, len(qS_grid) - 1)
+
+    qS_lower = qS_grid[qS_indices - 1]
+    qS_upper = qS_grid[qS_indices]
+    qT_lower = qT_grid[qT_indices - 1]
+    qT_upper = qT_grid[qT_indices]
+    qS_weight = (q_diagonal - qS_lower) / (qS_upper - qS_lower)
+    qT_weight = (q_diagonal - qT_lower) / (qT_upper - qT_lower)
+
+    lower_values = (
+        (1.0 - qT_weight) * surface_data[qS_indices - 1, qT_indices - 1]
+        + qT_weight * surface_data[qS_indices - 1, qT_indices]
+    )
+    upper_values = (
+        (1.0 - qT_weight) * surface_data[qS_indices, qT_indices - 1]
+        + qT_weight * surface_data[qS_indices, qT_indices]
+    )
+    values = (1.0 - qS_weight) * lower_values + qS_weight * upper_values
+    return q_diagonal, values
+
+
+def plot_singlet_triplet_diagonal(
+    qS_grid: np.ndarray,
+    qT_grid: np.ndarray,
+    GS_surface: np.ndarray,
+    GT_surface: np.ndarray,
+    results_dir: Path,
+) -> None:
+    """Plot singlet and triplet free energies along qS=qT=q."""
+    q_diagonal, GS_diagonal = _extract_diagonal_profile(
+        qS_grid, qT_grid, GS_surface
+    )
+    _, GT_diagonal = _extract_diagonal_profile(qS_grid, qT_grid, GT_surface)
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(
+        _to_ev(q_diagonal),
+        _to_ev(GS_diagonal),
+        linewidth=2,
+        label=r"$\Delta G_S$",
+    )
+    plt.plot(
+        _to_ev(q_diagonal),
+        _to_ev(GT_diagonal),
+        linestyle="--",
+        linewidth=2,
+        label=r"$\Delta G_T$",
+    )
+    plt.xlabel(r"$q=q_S=q_T$ (eV)", fontsize=30)
+    plt.ylabel(r"$\Delta G$ (eV)", fontsize=30)
+    plt.tick_params(axis="both", labelsize=18)
+    plt.legend(fontsize=20)
+    plt.tight_layout()
+    plt.savefig(
+        results_dir / "singlet_triplet_diagonal.png",
+        dpi=300,
+        bbox_inches="tight",
+    )
+    plt.close()
+    print(f"Saved {results_dir / 'singlet_triplet_diagonal.png'}")
+
+
 def plot_coordinate_time_series(
     data: EnergyData,
     results_dir: Path,

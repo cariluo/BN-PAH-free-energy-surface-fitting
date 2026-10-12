@@ -8,6 +8,7 @@ from bn_pah_fes.polynomial import (
     polynomial_basis,
     polynomial_gradient,
 )
+from bn_pah_fes.plotting import _extract_diagonal_profile
 from bn_pah_fes.surfaces import _model_functions
 
 
@@ -58,3 +59,16 @@ def test_cubic_surface_model_is_unsquared() -> None:
         polynomial(theta, polynomial_basis(points)),
     )
     assert_allclose(gradient(theta, points), polynomial_gradient(theta, points))
+
+
+def test_extract_diagonal_profile_interpolates_qs_equals_qt() -> None:
+    """The diagonal helper returns the exact qS=qT cut of an affine surface."""
+    qS_grid = np.array([0.0, 1.0, 2.0])
+    qT_grid = np.array([-1.0, 1.0, 3.0])
+    surface = 2.0 * qS_grid[:, None] - 3.0 * qT_grid[None, :] + 1.0
+
+    q_diagonal, values = _extract_diagonal_profile(
+        qS_grid, qT_grid, surface, n_points=5
+    )
+
+    assert_allclose(values, 1.0 - q_diagonal)
