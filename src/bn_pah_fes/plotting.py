@@ -25,6 +25,7 @@ AXIS_TICK_FONTSIZE = 15
 AXIS_LABEL_PAD = 15
 COLORBAR_SHRINK = 0.7
 COLORBAR_PAD = 0.1
+MINIMUM_ANNOTATION_FONTSIZE = 20
 HARTREE_TO_EV = 27.211386245988
 
 
@@ -360,7 +361,7 @@ def plot_3d_free_energy_surface(
             minimum_label,
             transform=ax.transAxes,
             va="top",
-            fontsize=16,
+            fontsize=MINIMUM_ANNOTATION_FONTSIZE,
         )
         if _minimum_is_in_grid(minimum, QS, QT):
             ax.scatter(
@@ -447,7 +448,7 @@ def plot_delta_g_contour(
             minimum_label,
             transform=plt.gca().transAxes,
             va="top",
-            fontsize=16,
+            fontsize=MINIMUM_ANNOTATION_FONTSIZE,
         )
         if _minimum_is_in_grid(minimum, QS, QT):
             plt.scatter(
