@@ -54,6 +54,17 @@ def _model_functions(params: Parameters):
     raise ValueError(f"Unknown free-energy model: {params.model}")
 
 
+def _log_trapezoidal_weights(grid: np.ndarray) -> np.ndarray:
+    """Return logarithmic trapezoidal-rule weights for a uniform grid."""
+    if len(grid) < 2:
+        raise ValueError("Integration grid must contain at least two points.")
+
+    spacing = grid[1] - grid[0]
+    log_weights = np.full(len(grid), np.log(spacing))
+    log_weights[[0, -1]] += np.log(0.5)
+    return log_weights
+
+
 def calculate_G0(
     qS_values: np.ndarray,
     qT_values: np.ndarray,
@@ -68,7 +79,7 @@ def calculate_G0(
         raise ValueError("qS_values and qT_values must have the same shape.")
 
     basis, evaluate_free_energy, _, _ = _model_functions(params)
-    dq0 = q0_grid[1] - q0_grid[0]
+    log_quadrature_weights = _log_trapezoidal_weights(q0_grid)
     G0_values = np.empty(qS_values.size)
 
     for index, (qS_value, qT_value) in enumerate(
@@ -85,7 +96,7 @@ def calculate_G0(
             basis(points_scaled),
         )
         exponent = -params.beta * (G_PBE + q0_grid)
-        log_integral = logsumexp(exponent) + np.log(dq0)
+        log_integral = logsumexp(exponent + log_quadrature_weights)
         G0_values[index] = -params.kBT * log_integral
 
     return G0_values.reshape(qS_values.shape)
@@ -134,6 +145,7 @@ def calculate_G0_gradient(
         raise ValueError("qS_values and qT_values must have the same shape.")
 
     basis, evaluate_free_energy, gradient_function, is_squared = _model_functions(params)
+    log_quadrature_weights = _log_trapezoidal_weights(q0_grid)
     gradients = np.empty((qS_values.size, 2))
 
     for index, (qS_value, qT_value) in enumerate(
@@ -159,7 +171,8 @@ def calculate_G0_gradient(
             G_PBE_grad = polynomial_grad
 
         exponent = -params.beta * (G_PBE + q0_grid)
-        log_weights = exponent - logsumexp(exponent)
+        log_weights = exponent + log_quadrature_weights
+        log_weights -= logsumexp(log_weights)
         weights = np.exp(log_weights)
 
         # Convert derivatives with respect to scaled coordinates to physical coordinates.
@@ -268,8 +281,12 @@ def calculate_surfaces(
     qT_min, qT_max = q[:, 2].min(), q[:, 2].max()
     qS_pad = params.plot_padding_factor * (qS_max - qS_min)
     qT_pad = params.plot_padding_factor * (qT_max - qT_min)
-    qS_grid = np.linspace(qS_min - qS_pad, qS_max, params.n_grid_surface)
-    qT_grid = np.linspace(qT_min - qT_pad, qT_max, params.n_grid_surface)
+    qS_grid = np.linspace(
+        qS_min - qS_pad, qS_max + qS_pad, params.n_grid_surface
+    )
+    qT_grid = np.linspace(
+        qT_min - qT_pad, qT_max + qT_pad, params.n_grid_surface
+    )
 
     q0_min, q0_max = q[:, 0].min(), q[:, 0].max()
     q0_pad = params.q0_padding_factor * (q0_max - q0_min)
