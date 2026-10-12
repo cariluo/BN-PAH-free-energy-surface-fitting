@@ -2,6 +2,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.special import logsumexp
 
 from .data import EnergyData
 from .kde import KDEResult
@@ -45,6 +46,145 @@ def _minimum_is_in_grid(
         QS.min() <= qS_minimum <= QS.max()
         and QT.min() <= qT_minimum <= QT.max()
     )
+
+
+def _bilinear_interpolate(
+    qS_grid: np.ndarray,
+    qT_grid: np.ndarray,
+    surface_data: np.ndarray,
+    qS_values: np.ndarray,
+    qT_values: np.ndarray,
+) -> np.ndarray:
+    """Interpolate a surface at matching qS and qT coordinates."""
+    qS_values = np.asarray(qS_values)
+    qT_values = np.asarray(qT_values)
+    if qS_values.shape != qT_values.shape:
+        raise ValueError("qS_values and qT_values must have the same shape.")
+    if (
+        np.any(qS_values < qS_grid.min())
+        or np.any(qS_values > qS_grid.max())
+        or np.any(qT_values < qT_grid.min())
+        or np.any(qT_values > qT_grid.max())
+    ):
+        raise ValueError("Interpolation coordinates must lie within the surface grid.")
+
+    qS_indices = np.clip(
+        np.searchsorted(qS_grid, qS_values, side="left"),
+        1,
+        len(qS_grid) - 1,
+    )
+    qT_indices = np.clip(
+        np.searchsorted(qT_grid, qT_values, side="left"),
+        1,
+        len(qT_grid) - 1,
+    )
+    qS_lower = qS_grid[qS_indices - 1]
+    qS_upper = qS_grid[qS_indices]
+    qT_lower = qT_grid[qT_indices - 1]
+    qT_upper = qT_grid[qT_indices]
+    qS_weight = (qS_values - qS_lower) / (qS_upper - qS_lower)
+    qT_weight = (qT_values - qT_lower) / (qT_upper - qT_lower)
+
+    lower_values = (
+        (1.0 - qT_weight) * surface_data[qS_indices - 1, qT_indices - 1]
+        + qT_weight * surface_data[qS_indices - 1, qT_indices]
+    )
+    upper_values = (
+        (1.0 - qT_weight) * surface_data[qS_indices, qT_indices - 1]
+        + qT_weight * surface_data[qS_indices, qT_indices]
+    )
+    return (1.0 - qS_weight) * lower_values + qS_weight * upper_values
+
+
+def _project_gap_profile(
+    qS_grid: np.ndarray,
+    qT_grid: np.ndarray,
+    surface_data: np.ndarray,
+    beta: float,
+    n_gap_points: int | None = None,
+    n_integration_points: int | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Project a 2D surface onto q=qS-qT by integrating out qbar."""
+    gap_min = qS_grid.min() - qT_grid.max()
+    gap_max = qS_grid.max() - qT_grid.min()
+    n_gap_points = n_gap_points or max(len(qS_grid), len(qT_grid))
+    n_integration_points = n_integration_points or max(
+        len(qS_grid), len(qT_grid)
+    )
+    # Omit the endpoints, where the allowed qbar interval has zero width.
+    gap_grid = np.linspace(gap_min, gap_max, n_gap_points + 2)[1:-1]
+    projected_free_energy = np.empty_like(gap_grid)
+
+    for index, gap in enumerate(gap_grid):
+        qbar_min = max(qS_grid.min() - 0.5 * gap, qT_grid.min() + 0.5 * gap)
+        qbar_max = min(qS_grid.max() - 0.5 * gap, qT_grid.max() + 0.5 * gap)
+        qbar_grid = np.linspace(qbar_min, qbar_max, n_integration_points)
+        # Clip only round-off-level excursions at the analytically valid bounds.
+        qS_values = np.clip(
+            qbar_grid + 0.5 * gap, qS_grid.min(), qS_grid.max()
+        )
+        qT_values = np.clip(
+            qbar_grid - 0.5 * gap, qT_grid.min(), qT_grid.max()
+        )
+        surface_values = _bilinear_interpolate(
+            qS_grid,
+            qT_grid,
+            surface_data,
+            qS_values,
+            qT_values,
+        )
+        log_weights = np.full(
+            n_integration_points,
+            np.log((qbar_max - qbar_min) / (n_integration_points - 1)),
+        )
+        log_weights[[0, -1]] += np.log(0.5)
+        projected_free_energy[index] = -logsumexp(
+            -beta * surface_values + log_weights
+        ) / beta
+
+    return gap_grid, projected_free_energy
+
+
+def plot_singlet_triplet_gap_profiles(
+    qS_grid: np.ndarray,
+    qT_grid: np.ndarray,
+    GS_surface: np.ndarray,
+    GT_surface: np.ndarray,
+    beta: float,
+    results_dir: Path,
+) -> None:
+    """Plot singlet and triplet free energies projected onto qS-qT."""
+    q_gap, GS_gap = _project_gap_profile(
+        qS_grid, qT_grid, GS_surface, beta
+    )
+    _, GT_gap = _project_gap_profile(qS_grid, qT_grid, GT_surface, beta)
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(
+        _to_ev(q_gap),
+        _to_ev(GS_gap),
+        linewidth=2,
+        label=r"$\Delta G_S$",
+    )
+    plt.plot(
+        _to_ev(q_gap),
+        _to_ev(GT_gap),
+        linestyle="--",
+        linewidth=2,
+        label=r"$\Delta G_T$",
+    )
+    plt.xlabel(r"$q=q_S-q_T$ (eV)", fontsize=30)
+    plt.ylabel(r"$\Delta G$ (eV)", fontsize=30)
+    plt.tick_params(axis="both", labelsize=18)
+    plt.legend(fontsize=20)
+    plt.tight_layout()
+    plt.savefig(
+        results_dir / "singlet_triplet_gap_profiles.png",
+        dpi=300,
+        bbox_inches="tight",
+    )
+    plt.close()
+    print(f"Saved {results_dir / 'singlet_triplet_gap_profiles.png'}")
 
 
 def plot_coordinate_time_series(
