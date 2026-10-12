@@ -108,7 +108,9 @@ def plot_singlet_triplet_gap_histogram(
 ) -> None:
     """Plot a q0-reweighted histogram of the singlet-triplet gaps qS - qT."""
     singlet_triplet_gap = _to_ev(data.qS - data.qT)
-    weights = np.exp(-beta * data.q0)
+    log_weights = -beta * data.q0
+    log_weights -= log_weights.max()
+    weights = np.exp(log_weights)
     weights /= weights.sum()
 
     plt.figure(figsize=(8, 6))
@@ -147,8 +149,9 @@ def plot_singlet_triplet_gap_histogram(
     )
 
     counts = negative_counts + nonnegative_counts
-    mean = np.mean(singlet_triplet_gap)
-    std = np.std(singlet_triplet_gap)
+    mean = np.average(singlet_triplet_gap, weights=weights)
+    variance = np.average((singlet_triplet_gap - mean) ** 2, weights=weights)
+    std = np.sqrt(variance)
 
     x_fit = np.linspace(bins[0], bins[-1], 300)
     gaussian = counts.max() * np.exp(-0.5 * ((x_fit - mean) / std) ** 2)
@@ -422,7 +425,6 @@ def plot_delta_g_contour(
         _to_ev(surface_data),
         levels=30,
         vmin=0.0,
-        vmax=_to_ev(0.65),
         cmap="viridis",
     )
     plt.scatter(

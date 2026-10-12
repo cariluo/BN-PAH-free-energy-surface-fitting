@@ -30,27 +30,38 @@ class EnergyData:
         return np.column_stack((self.q0, self.qS, self.qT))
 
 
+def _load_energy_file(data_dir: Path, filename: str, n_samples: int) -> np.ndarray:
+    """Load an energy trajectory and ensure it contains enough samples."""
+    values = np.atleast_1d(np.loadtxt(data_dir / filename))
+    if len(values) < n_samples:
+        raise ValueError(
+            f"{filename} contains {len(values)} entries, but "
+            f"n_samples={n_samples} was requested."
+        )
+    return values[:n_samples]
+
+
 def load_data(data_dir: Path, n_samples: int, n_acf: int) -> EnergyData:
     """Load input energy trajectories and construct fitting coordinates."""
-    E_pbe_all = np.loadtxt(data_dir / "PBE0_energies.txt")[:n_samples]
+    if n_samples <= 0:
+        raise ValueError("n_samples must be positive.")
+    if n_acf <= 0:
+        raise ValueError("n_acf must be positive.")
+
+    E_pbe_all = _load_energy_file(data_dir, "PBE0_energies.txt", n_samples)
+    qS_all = _load_energy_file(data_dir, "qS_energies.txt", n_samples)
+    qT_all = _load_energy_file(data_dir, "qT_energies.txt", n_samples)
+    S0_all = _load_energy_file(data_dir, "S0_energies.txt", n_samples)
+
     E_pbe = E_pbe_all[::n_acf]
-
-    qS_all = np.loadtxt(data_dir / "qS_energies.txt")[:n_samples]
     qS = qS_all[::n_acf]
-
-    qT_all = np.loadtxt(data_dir / "qT_energies.txt")[:n_samples]
     qT = qT_all[::n_acf]
-
-    S0_all = np.loadtxt(data_dir / "S0_energies.txt")[:n_samples]
     S0 = S0_all[::n_acf]
 
     q0_all = S0_all - E_pbe_all
     q0 = S0 - E_pbe
 
-    if not (len(E_pbe) == len(qS) == len(qT) == len(S0)):
-        raise ValueError("Input files do not contain the same number of entries.")
-
-    idx_all = np.arange(n_samples)
+    idx_all = np.arange(len(E_pbe_all))
     idx = idx_all[::n_acf]
 
     return EnergyData(
