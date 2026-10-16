@@ -3,7 +3,11 @@ import numpy as np
 
 matplotlib.use("Agg")
 
-from bn_pah_fes.plotting import (\n    plot_likelihood,\n    plot_likelihood_convergence,\n    plot_singlet_triplet_gap_profiles,\n)
+from bn_pah_fes.plotting import (
+    plot_likelihood,
+    plot_likelihood_convergence,
+    plot_singlet_triplet_gap_profiles,
+)
 
 
 def test_likelihood_plots_multiple_models(tmp_path):
