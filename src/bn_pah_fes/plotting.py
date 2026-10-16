@@ -341,6 +341,46 @@ def plot_fit_free_energy_history(
     plt.close()
 
 
+
+def plot_likelihood(
+    histories: dict[str, tuple[list[float], float]],
+    results_dir: Path,
+) -> None:
+    """Plot raw likelihood histories for one or more fitted models."""
+    plt.figure(figsize=(8, 6))
+    plotted = False
+
+    for model, (history, _) in histories.items():
+        if not history:
+            continue
+        iterations = np.arange(len(history))
+        plt.plot(
+            iterations,
+            history,
+            linewidth=2,
+            marker="o",
+            markersize=5,
+            label=model.replace("_", " "),
+        )
+        plotted = True
+
+    if not plotted:
+        plt.close()
+        return
+
+    plt.xlabel("Optimization iteration", fontsize=30)
+    plt.ylabel(r"$\mathcal{L}$", fontsize=24)
+    plt.title("Likelihood", fontsize=24)
+    plt.tick_params(axis="both", labelsize=18)
+    plt.legend(fontsize=13)
+    plt.tight_layout()
+    plt.savefig(
+        results_dir / "likelihood.png",
+        dpi=300,
+        bbox_inches="tight",
+    )
+    plt.close()
+
 def plot_likelihood_convergence(
     histories: dict[str, tuple[list[float], float]],
     results_dir: Path,
