@@ -31,7 +31,11 @@ def _choose_options(
 
         try:
             indices = [int(item.strip()) for item in selection.split(",")]
-            if not indices or len(set(indices)) != len(indices):
+            if (
+                not indices
+                or len(set(indices)) != len(indices)
+                or any(index < 1 or index > len(choices) for index in indices)
+            ):
                 raise ValueError
             return tuple(choices[index - 1] for index in indices)
         except (IndexError, ValueError):
