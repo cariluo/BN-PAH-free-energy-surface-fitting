@@ -55,7 +55,7 @@ print(
     kde_result.sampled_free_energy.max(),
 )
 
-# Cubic polynomial fit
+# Selected free-energy model fit
 fit_result = fit_free_energy(data, params)
 plot_fit_free_energy_history(
     fit_result.free_energy_history,

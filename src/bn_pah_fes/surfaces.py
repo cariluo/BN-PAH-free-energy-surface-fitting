@@ -47,8 +47,8 @@ class SurfaceMinimum:
 
 def _model_functions(params: Parameters):
     """Return the basis, free-energy, and gradient functions for the model."""
-    if params.model == "squared_cubic":
-        return polynomial_basis, free_energy, polynomial_gradient, True
+    if params.model == "squared_quadratic":
+        return harmonic_basis, free_energy, harmonic_gradient, True
     if params.model == "cubic":
         return polynomial_basis, polynomial, polynomial_gradient, False
     if params.model == "harmonic":

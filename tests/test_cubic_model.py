@@ -12,6 +12,18 @@ from bn_pah_fes.plotting import _project_gap_profile
 from bn_pah_fes.surfaces import _model_functions
 
 
+def test_squared_quadratic_parameter_gradient_uses_the_quadratic_basis() -> None:
+    """For G = P2², dG/dtheta is 2 P2 times the quadratic basis."""
+    rng = np.random.default_rng(10)
+    theta = rng.normal(size=10)
+    X = rng.normal(size=(4, 10))
+
+    assert_allclose(
+        _free_energy_parameter_gradient(theta, X, "squared_quadratic"),
+        2.0 * (X @ theta)[:, None] * X,
+    )
+
+
 def test_cubic_parameter_gradient_is_the_design_matrix() -> None:
     """For G = P3, dG/dtheta is the cubic polynomial basis."""
     rng = np.random.default_rng(0)
