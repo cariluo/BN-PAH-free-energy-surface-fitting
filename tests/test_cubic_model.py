@@ -49,11 +49,10 @@ def test_cubic_surface_model_is_unsquared() -> None:
     theta = rng.normal(size=20)
     points = rng.normal(size=(3, 3))
 
-    basis, evaluate_free_energy, gradient, is_squared = _model_functions(
+    basis, evaluate_free_energy, gradient = _model_functions(
         Parameters(model="cubic")
     )
 
-    assert not is_squared
     assert_allclose(
         evaluate_free_energy(theta, basis(points)),
         polynomial(theta, polynomial_basis(points)),
