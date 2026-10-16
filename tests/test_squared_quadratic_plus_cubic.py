@@ -1,6 +1,9 @@
 import numpy as np
 
-from bn_pah_fes.fitting import _squared_quadratic_initial_theta
+from bn_pah_fes.fitting import (
+    _free_energy_parameter_gradient,
+    _squared_quadratic_initial_theta,
+)
 from bn_pah_fes.polynomial import (
     free_energy,
     harmonic_basis,
@@ -49,5 +52,33 @@ def test_squared_quadratic_plus_cubic_coordinate_gradient_matches_finite_differe
             theta, polynomial_basis(q - displacement)
         )
         numerical[:, coordinate] = (forward - backward) / (2.0 * step)
+
+    np.testing.assert_allclose(analytic, numerical, rtol=1.0e-6, atol=1.0e-6)
+
+
+def test_squared_quadratic_plus_cubic_parameter_gradient_matches_finite_difference():
+    rng = np.random.default_rng(4)
+    theta = rng.normal(scale=0.1, size=20)
+    X = polynomial_basis(rng.normal(size=(6, 3)))
+    analytic = _free_energy_parameter_gradient(
+        theta,
+        X,
+        "squared_quadratic_plus_cubic",
+    )
+
+    step = 1.0e-6
+    numerical = np.empty_like(analytic)
+    for parameter in range(20):
+        displacement = np.zeros(20)
+        displacement[parameter] = step
+        forward = squared_quadratic_plus_cubic_free_energy(
+            theta + displacement,
+            X,
+        )
+        backward = squared_quadratic_plus_cubic_free_energy(
+            theta - displacement,
+            X,
+        )
+        numerical[:, parameter] = (forward - backward) / (2.0 * step)
 
     np.testing.assert_allclose(analytic, numerical, rtol=1.0e-6, atol=1.0e-6)
