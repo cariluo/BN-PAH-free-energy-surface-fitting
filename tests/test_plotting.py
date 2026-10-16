@@ -27,8 +27,8 @@ def test_likelihood_plots_multiple_models(tmp_path):
 def test_gap_profiles_mark_both_projected_minima(tmp_path, monkeypatch):
     qS_grid = np.linspace(-1.0, 1.0, 5)
     qT_grid = np.linspace(-1.0, 1.0, 5)
-    GS_surface = (qS_grid[:, None] - 0.5) ** 2
-    GT_surface = (qT_grid[None, :] + 0.5) ** 2
+    GS_surface = (qS_grid[:, None] - 0.5) ** 2 + np.zeros_like(qT_grid)
+    GT_surface = (qT_grid[None, :] + 0.5) ** 2 + np.zeros_like(qS_grid)[:, None]
 
     minimum_markers = []
 
