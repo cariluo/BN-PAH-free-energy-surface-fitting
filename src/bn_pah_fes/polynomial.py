@@ -84,6 +84,43 @@ def harmonic_gradient(theta: np.ndarray, q: np.ndarray) -> np.ndarray:
     return np.einsum("j,ikj->ik", theta, gradient_basis)
 
 
+def squared_polynomial_gradient(theta: np.ndarray, q: np.ndarray) -> np.ndarray:
+    """Evaluate the gradient of P(q)**2 with respect to q."""
+    values = polynomial(theta, polynomial_basis(q))
+    return 2.0 * values[:, None] * polynomial_gradient(theta, q)
+
+
+def squared_quadratic_gradient(theta: np.ndarray, q: np.ndarray) -> np.ndarray:
+    """Evaluate the gradient of P2(q)**2 with respect to q."""
+    values = polynomial(theta, harmonic_basis(q))
+    return 2.0 * values[:, None] * harmonic_gradient(theta, q)
+
+
+def squared_quadratic_plus_cubic_free_energy(
+    theta: np.ndarray,
+    X: np.ndarray,
+) -> np.ndarray:
+    """Evaluate P2(q)**2 plus an additive pure-cubic correction."""
+    quadratic = X[:, :10] @ theta[:10]
+    cubic_correction = X[:, 10:] @ theta[10:]
+    return quadratic**2 + cubic_correction
+
+
+def squared_quadratic_plus_cubic_gradient(
+    theta: np.ndarray,
+    q: np.ndarray,
+) -> np.ndarray:
+    """Evaluate the gradient of P2(q)**2 + A3(q) with respect to q."""
+    quadratic = polynomial(theta[:10], harmonic_basis(q))
+    quadratic_gradient = harmonic_gradient(theta[:10], q)
+
+    cubic_theta = np.zeros(20)
+    cubic_theta[10:] = theta[10:]
+    cubic_gradient = polynomial_gradient(cubic_theta, q)
+
+    return 2.0 * quadratic[:, None] * quadratic_gradient + cubic_gradient
+
+
 def free_energy(theta: np.ndarray, X: np.ndarray) -> np.ndarray:
     """Evaluate the squared polynomial free-energy model."""
     return polynomial(theta, X) ** 2
