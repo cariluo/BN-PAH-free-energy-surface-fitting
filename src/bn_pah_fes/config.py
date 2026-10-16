@@ -16,7 +16,14 @@ class Parameters:
     n_grid: int = 50
     n_grid_surface: int = 150
     n_q0: int = 150
-    model: Literal["squared_cubic", "cubic", "harmonic"] = "squared_cubic"
+    model: Literal[
+        "squared_cubic",
+        "squared_quadratic",
+        "squared_quadratic_plus_cubic",
+        "cubic",
+        "harmonic",
+    ] = "squared_cubic"
+    initialization: Literal["default", "squared_quadratic_fit"] = "default"
 
     @property
     def kBT(self) -> float:

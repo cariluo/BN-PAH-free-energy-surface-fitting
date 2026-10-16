@@ -137,3 +137,23 @@ The model is selected with `Parameters(model=...)` in `fit_free_energy.py`:
 The fitted 3D surface is subsequently reweighted by `exp(-beta*q0)` and integrated numerically over `q0` to construct the 2D surfaces.
 
 This repository contains the analysis code; large trajectory/energy datasets are intentionally not included.
+
+
+### Squared-quadratic plus cubic model
+
+`"squared_quadratic"` fits \(\Delta G_\mathrm{PBE}=P_2(q_0,q_S,q_T)^2\) with the 10-term quadratic basis.
+
+`"squared_quadratic_plus_cubic"` fits
+\(\Delta G_\mathrm{PBE}=P_2(q_0,q_S,q_T)^2+A_3(q_0,q_S,q_T)\), where
+\(A_3\) contains only the ten pure cubic monomials. This is distinct from
+`"squared_cubic"`, which squares the entire cubic polynomial.
+
+To first fit the squared-quadratic baseline and then add the cubic correction,
+use:
+
+```python
+Parameters(
+    model="squared_quadratic_plus_cubic",
+    initialization="squared_quadratic_fit",
+)
+```

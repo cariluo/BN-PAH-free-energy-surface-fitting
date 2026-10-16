@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 from scipy.optimize import minimize
@@ -12,6 +12,7 @@ from .polynomial import (
     free_energy,
     polynomial,
     polynomial_basis,
+    squared_quadratic_plus_cubic_free_energy,
 )
 
 
@@ -58,9 +59,13 @@ def _integration_grid(q_scaled: np.ndarray, params: Parameters):
     q_integration = np.column_stack(
         [Q1.ravel(), Q2.ravel(), Q3.ravel()]
     )
-    if params.model in ("squared_cubic", "cubic"):
+    if params.model in (
+        "squared_cubic",
+        "squared_quadratic_plus_cubic",
+        "cubic",
+    ):
         X_integration = polynomial_basis(q_integration)
-    elif params.model == "harmonic":
+    elif params.model in ("squared_quadratic", "harmonic"):
         X_integration = harmonic_basis(q_integration)
     else:
         raise ValueError(f"Unknown free-energy model: {params.model}")
@@ -78,12 +83,34 @@ def _free_energy_parameter_gradient(
     model: str,
 ) -> np.ndarray:
     """Return dG/dtheta for each configuration and parameter."""
-    if model == "squared_cubic":
+    if model in ("squared_cubic", "squared_quadratic"):
         polynomial_values = polynomial(theta, X)
         return 2.0 * polynomial_values[:, None] * X
+    if model == "squared_quadratic_plus_cubic":
+        quadratic = X[:, :10] @ theta[:10]
+        return np.column_stack([
+            2.0 * quadratic[:, None] * X[:, :10],
+            X[:, 10:],
+        ])
     if model in ("cubic", "harmonic"):
         return X
     raise ValueError(f"Unknown free-energy model: {model}")
+
+
+def _squared_quadratic_initial_theta(
+    squared_quadratic_theta: np.ndarray,
+) -> np.ndarray:
+    """Embed squared-quadratic coefficients in the full 20-term parameter vector."""
+    squared_quadratic_theta = np.asarray(squared_quadratic_theta, dtype=float)
+    if squared_quadratic_theta.shape != (10,):
+        raise ValueError(
+            "squared_quadratic_theta must have shape (10,), "
+            f"got {squared_quadratic_theta.shape}"
+        )
+
+    theta = np.zeros(20)
+    theta[:10] = squared_quadratic_theta
+    return theta
 
 
 def fit_free_energy(
@@ -92,6 +119,28 @@ def fit_free_energy(
     initial_theta: np.ndarray | None = None,
 ) -> FitResult:
     """Fit the selected free-energy model."""
+    if params.initialization == "squared_quadratic_fit":
+        if initial_theta is not None:
+            raise ValueError(
+                "initial_theta cannot be supplied with "
+                "initialization='squared_quadratic_fit'."
+            )
+        if params.model != "squared_quadratic_plus_cubic":
+            raise ValueError(
+                "initialization='squared_quadratic_fit' is only supported "
+                "for model='squared_quadratic_plus_cubic'."
+            )
+
+        baseline_params = replace(
+            params,
+            model="squared_quadratic",
+            initialization="default",
+        )
+        baseline_fit = fit_free_energy(data, baseline_params)
+        initial_theta = _squared_quadratic_initial_theta(baseline_fit.theta)
+    elif params.initialization != "default":
+        raise ValueError(f"Unknown initialization: {params.initialization}")
+
     q = data.q
     q_mean = np.mean(q, axis=0)
     q_std = np.std(q, axis=0)
@@ -100,6 +149,14 @@ def fit_free_energy(
     if params.model == "squared_cubic":
         X = polynomial_basis(q_scaled)
         evaluate_free_energy = free_energy
+        n_parameters = 20
+    elif params.model == "squared_quadratic":
+        X = harmonic_basis(q_scaled)
+        evaluate_free_energy = free_energy
+        n_parameters = 10
+    elif params.model == "squared_quadratic_plus_cubic":
+        X = polynomial_basis(q_scaled)
+        evaluate_free_energy = squared_quadratic_plus_cubic_free_energy
         n_parameters = 20
     elif params.model == "cubic":
         X = polynomial_basis(q_scaled)

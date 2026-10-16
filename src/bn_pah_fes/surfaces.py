@@ -14,6 +14,10 @@ from .polynomial import (
     polynomial_basis,
     polynomial_gradient,
     harmonic_basis,
+    squared_polynomial_gradient,
+    squared_quadratic_gradient,
+    squared_quadratic_plus_cubic_free_energy,
+    squared_quadratic_plus_cubic_gradient,
 )
 
 
@@ -48,11 +52,19 @@ class SurfaceMinimum:
 def _model_functions(params: Parameters):
     """Return the basis, free-energy, and gradient functions for the model."""
     if params.model == "squared_cubic":
-        return polynomial_basis, free_energy, polynomial_gradient, True
+        return polynomial_basis, free_energy, squared_polynomial_gradient
+    if params.model == "squared_quadratic":
+        return harmonic_basis, free_energy, squared_quadratic_gradient
+    if params.model == "squared_quadratic_plus_cubic":
+        return (
+            polynomial_basis,
+            squared_quadratic_plus_cubic_free_energy,
+            squared_quadratic_plus_cubic_gradient,
+        )
     if params.model == "cubic":
-        return polynomial_basis, polynomial, polynomial_gradient, False
+        return polynomial_basis, polynomial, polynomial_gradient
     if params.model == "harmonic":
-        return harmonic_basis, harmonic_free_energy, harmonic_gradient, False
+        return harmonic_basis, harmonic_free_energy, harmonic_gradient
     raise ValueError(f"Unknown free-energy model: {params.model}")
 
 
@@ -80,7 +92,7 @@ def calculate_G0(
     if qS_values.shape != qT_values.shape:
         raise ValueError("qS_values and qT_values must have the same shape.")
 
-    basis, evaluate_free_energy, _, _ = _model_functions(params)
+    basis, evaluate_free_energy, _ = _model_functions(params)
     log_quadrature_weights = _log_trapezoidal_weights(q0_grid)
     G0_values = np.empty(qS_values.size)
 
@@ -112,7 +124,7 @@ def calculate_q0_integrand(
     params: Parameters,
 ) -> np.ndarray:
     """Calculate the q0 integrand used in the G0 numerical integration."""
-    basis, evaluate_free_energy, _, _ = _model_functions(params)
+    basis, evaluate_free_energy, _ = _model_functions(params)
     points = np.column_stack([
         q0_grid,
         np.full(len(q0_grid), qS_value),
@@ -146,7 +158,7 @@ def calculate_G0_gradient(
     if qS_values.shape != qT_values.shape:
         raise ValueError("qS_values and qT_values must have the same shape.")
 
-    basis, evaluate_free_energy, gradient_function, is_squared = _model_functions(params)
+    basis, evaluate_free_energy, gradient_function = _model_functions(params)
     log_quadrature_weights = _log_trapezoidal_weights(q0_grid)
     gradients = np.empty((qS_values.size, 2))
 
@@ -159,18 +171,9 @@ def calculate_G0_gradient(
             np.full(len(q0_grid), qT_value),
         ])
         points_scaled = (points - fit_result.q_mean) / fit_result.q_std
-        polynomial_values = polynomial(
-            fit_result.theta,
-            basis(points_scaled),
-        )
-        polynomial_grad = gradient_function(fit_result.theta, points_scaled)
-
-        if is_squared:
-            G_PBE = polynomial_values**2
-            G_PBE_grad = 2 * polynomial_values[:, None] * polynomial_grad
-        else:
-            G_PBE = polynomial_values
-            G_PBE_grad = polynomial_grad
+        X = basis(points_scaled)
+        G_PBE = evaluate_free_energy(fit_result.theta, X)
+        G_PBE_grad = gradient_function(fit_result.theta, points_scaled)
 
         exponent = -params.beta * (G_PBE + q0_grid)
         log_weights = exponent + log_quadrature_weights
