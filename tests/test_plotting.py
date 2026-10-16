@@ -1,4 +1,5 @@
 import matplotlib
+from matplotlib.axes import Axes
 import numpy as np
 
 matplotlib.use("Agg")
@@ -31,12 +32,19 @@ def test_gap_profiles_mark_both_projected_minima(tmp_path, monkeypatch):
     GT_surface = (qT_grid[None, :] + 0.5) ** 2 + np.zeros_like(qS_grid)[:, None]
 
     minimum_markers = []
+    annotations = []
+    original_text = Axes.text
 
     def capture_scatter(*args, **kwargs):
         if kwargs.get("marker") == "*":
             minimum_markers.append((args, kwargs))
 
+    def capture_text(self, x, y, text, **kwargs):
+        annotations.append(text)
+        return original_text(self, x, y, text, **kwargs)
+
     monkeypatch.setattr("bn_pah_fes.plotting.plt.scatter", capture_scatter)
+    monkeypatch.setattr(Axes, "text", capture_text)
 
     plot_singlet_triplet_gap_profiles(
         qS_grid,
@@ -49,7 +57,6 @@ def test_gap_profiles_mark_both_projected_minima(tmp_path, monkeypatch):
 
     assert (tmp_path / "singlet_triplet_gap_profiles.png").is_file()
     assert len(minimum_markers) == 2
-    assert {marker[1]["label"] for marker in minimum_markers} == {
-        r"Min $\Delta G_S$",
-        r"Min $\Delta G_T$",
-    }
+    assert all("label" not in marker[1] for marker in minimum_markers)
+    assert len(annotations) == 1
+    assert r"$G_T^{\min} - G_S^{\min} = $" in annotations[0]
