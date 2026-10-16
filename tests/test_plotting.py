@@ -1,8 +1,9 @@
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")
 
-from bn_pah_fes.plotting import plot_likelihood, plot_likelihood_convergence
+from bn_pah_fes.plotting import (\n    plot_likelihood,\n    plot_likelihood_convergence,\n    plot_singlet_triplet_gap_profiles,\n)
 
 
 def test_likelihood_plots_multiple_models(tmp_path):
@@ -16,3 +17,35 @@ def test_likelihood_plots_multiple_models(tmp_path):
 
     assert (tmp_path / "likelihood.png").is_file()
     assert (tmp_path / "likelihood_convergence.png").is_file()
+
+
+
+def test_gap_profiles_mark_both_projected_minima(tmp_path, monkeypatch):
+    qS_grid = np.linspace(-1.0, 1.0, 5)
+    qT_grid = np.linspace(-1.0, 1.0, 5)
+    GS_surface = (qS_grid[:, None] - 0.5) ** 2
+    GT_surface = (qT_grid[None, :] + 0.5) ** 2
+
+    minimum_markers = []
+
+    def capture_scatter(*args, **kwargs):
+        if kwargs.get("marker") == "*":
+            minimum_markers.append((args, kwargs))
+
+    monkeypatch.setattr("bn_pah_fes.plotting.plt.scatter", capture_scatter)
+
+    plot_singlet_triplet_gap_profiles(
+        qS_grid,
+        qT_grid,
+        GS_surface,
+        GT_surface,
+        beta=1.0,
+        results_dir=tmp_path,
+    )
+
+    assert (tmp_path / "singlet_triplet_gap_profiles.png").is_file()
+    assert len(minimum_markers) == 2
+    assert {marker[1]["label"] for marker in minimum_markers} == {
+        r"Min $\Delta G_S$",
+        r"Min $\Delta G_T$",
+    }
