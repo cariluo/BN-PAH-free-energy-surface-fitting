@@ -342,41 +342,45 @@ def plot_fit_free_energy_history(
 
 
 def plot_likelihood_convergence(
-    history: list[float],
-    final_objective: float,
+    histories: dict[str, tuple[list[float], float]],
     results_dir: Path,
-    model: str,
 ) -> None:
-    """Plot positive likelihood gaps relative to the final objective."""
-    iterations = np.arange(len(history))
-    objective_gap = np.asarray(history) - final_objective
-    positive_gap = objective_gap > 0.0
-    if not np.any(positive_gap):
+    """Plot positive likelihood gaps for one or more fitted models."""
+    plt.figure(figsize=(8, 6))
+    plotted = False
+
+    for model, (history, final_objective) in histories.items():
+        iterations = np.arange(len(history))
+        objective_gap = np.asarray(history) - final_objective
+        positive_gap = objective_gap > 0.0
+        if not np.any(positive_gap):
+            continue
+        plt.semilogy(
+            iterations[positive_gap],
+            objective_gap[positive_gap],
+            linewidth=2,
+            marker="o",
+            markersize=5,
+            label=model.replace("_", " "),
+        )
+        plotted = True
+
+    if not plotted:
+        plt.close()
         return
 
-    plt.figure(figsize=(8, 6))
-    plt.semilogy(
-        iterations[positive_gap],
-        objective_gap[positive_gap],
-        linewidth=2,
-        marker="o",
-        markersize=5,
-    )
     plt.xlabel("Optimization iteration", fontsize=30)
-    plt.ylabel(
-        r"$\mathcal{L} - \mathcal{L}_{\mathrm{final}}$",
-        fontsize=24,
-    )
-    plt.title(f"{model.replace('_', ' ').title()} model", fontsize=24)
+    plt.ylabel(r"$\mathcal{L} - \mathcal{L}_{\mathrm{final}}$", fontsize=24)
+    plt.title("Likelihood convergence", fontsize=24)
     plt.tick_params(axis="both", labelsize=18)
+    plt.legend(fontsize=13)
     plt.tight_layout()
     plt.savefig(
-        results_dir / f"likelihood_convergence_{model}.png",
+        results_dir / "likelihood_convergence.png",
         dpi=300,
         bbox_inches="tight",
     )
     plt.close()
-
 
 def plot_kde_surface(
     data: EnergyData,
