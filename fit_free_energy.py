@@ -43,10 +43,10 @@ plot_coordinate_time_series(data, RESULTS_DIR)
 plot_energy_correlation(data, RESULTS_DIR)
 
 # Plot a q0-reweighted histogram of the singlet-triplet gaps
-plot_singlet_triplet_gap_histogram(data, RESULTS_DIR, params.beta)
+plot_singlet_triplet_gap_histogram(data, RESULTS_DIR, reference_params.beta)
 
 # Weighted empirical 2D free-energy surface
-kde_result = calculate_kde_surface(data, params)
+kde_result = calculate_kde_surface(data, reference_params)
 print("G range:", kde_result.free_energy.min(), kde_result.free_energy.max())
 print(
     "G_sampled range:",
@@ -58,7 +58,7 @@ likelihood_histories = {}
 
 for params in parameter_sets:
     # Fit selected free-energy model
-    model_results_dir = model_results_dir / params.model
+    model_results_dir = RESULTS_DIR / params.model
     model_results_dir.mkdir(exist_ok=True)
     
     fit_result = fit_free_energy(data, params)
