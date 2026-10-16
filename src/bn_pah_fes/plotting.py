@@ -173,6 +173,45 @@ def plot_singlet_triplet_gap_profiles(
         linewidth=2,
         label=r"$\Delta G_T$",
     )
+
+    GS_minimum_index = np.argmin(GS_gap)
+    GT_minimum_index = np.argmin(GT_gap)
+    minimum_energy_difference = (
+        GS_gap[GS_minimum_index] - GT_gap[GT_minimum_index]
+    )
+    plt.scatter(
+        _to_ev(q_gap[GS_minimum_index]),
+        _to_ev(GS_gap[GS_minimum_index]),
+        marker="*",
+        s=220,
+        facecolors="red",
+        edgecolors="black",
+        linewidths=1.0,
+        zorder=5,
+    )
+    plt.scatter(
+        _to_ev(q_gap[GT_minimum_index]),
+        _to_ev(GT_gap[GT_minimum_index]),
+        marker="*",
+        s=220,
+        facecolors="red",
+        edgecolors="black",
+        linewidths=1.0,
+        zorder=5,
+    )
+    axes = plt.gca()
+    axes.text(
+        0.98,
+        0.98,
+        (
+            r"$G_S^{\min} - G_T^{\min} = $"
+            f"{_to_ev(minimum_energy_difference):.4f} eV"
+        ),
+        transform=axes.transAxes,
+        ha="right",
+        va="top",
+        fontsize=18,
+    )
     plt.xlabel(r"$q=q_S-q_T$ (eV)", fontsize=30)
     plt.ylabel(r"$\Delta G$ (eV)", fontsize=30)
     plt.tick_params(axis="both", labelsize=18)
