@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 
-from bn_pah_fes.config import Parameters
+from bn_pah_fes.cli import choose_parameters
 from bn_pah_fes.data import load_data
 from bn_pah_fes.fitting import fit_free_energy
 from bn_pah_fes.kde import calculate_kde_surface
@@ -21,7 +21,7 @@ from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 
 
 # Parameters
-params = Parameters(model="harmonic")
+params = choose_parameters()
 N_SAMPLES = params.n_samples
 N_ACF = params.n_acf
 fit_padding_factor = params.fit_padding_factor
@@ -55,7 +55,7 @@ print(
     kde_result.sampled_free_energy.max(),
 )
 
-# Cubic polynomial fit
+# Fit selected free-energy model
 fit_result = fit_free_energy(data, params)
 plot_fit_free_energy_history(
     fit_result.free_energy_history,
