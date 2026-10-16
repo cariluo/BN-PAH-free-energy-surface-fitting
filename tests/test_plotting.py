@@ -40,7 +40,7 @@ def test_gap_profiles_mark_both_projected_minima(tmp_path, monkeypatch):
             minimum_markers.append((args, kwargs))
 
     def capture_text(self, x, y, text, **kwargs):
-        annotations.append(text)
+        annotations.append((x, y, text, kwargs))
         return original_text(self, x, y, text, **kwargs)
 
     monkeypatch.setattr("bn_pah_fes.plotting.plt.scatter", capture_scatter)
@@ -59,4 +59,7 @@ def test_gap_profiles_mark_both_projected_minima(tmp_path, monkeypatch):
     assert len(minimum_markers) == 2
     assert all("label" not in marker[1] for marker in minimum_markers)
     assert len(annotations) == 1
-    assert r"$G_T^{\min} - G_S^{\min} = $" in annotations[0]
+    x, y, annotation, annotation_kwargs = annotations[0]
+    assert (x, y) == (0.98, 0.98)
+    assert annotation_kwargs["ha"] == "right"
+    assert r"$G_S^{\min} - G_T^{\min} = $" in annotation

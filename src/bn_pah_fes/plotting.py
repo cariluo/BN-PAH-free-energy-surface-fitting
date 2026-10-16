@@ -177,7 +177,7 @@ def plot_singlet_triplet_gap_profiles(
     GS_minimum_index = np.argmin(GS_gap)
     GT_minimum_index = np.argmin(GT_gap)
     minimum_energy_difference = (
-        GT_gap[GT_minimum_index] - GS_gap[GS_minimum_index]
+        GS_gap[GS_minimum_index] - GT_gap[GT_minimum_index]
     )
     plt.scatter(
         _to_ev(q_gap[GS_minimum_index]),
@@ -201,13 +201,14 @@ def plot_singlet_triplet_gap_profiles(
     )
     axes = plt.gca()
     axes.text(
-        0.02,
+        0.98,
         0.98,
         (
-            r"$G_T^{\min} - G_S^{\min} = $"
+            r"$G_S^{\min} - G_T^{\min} = $"
             f"{_to_ev(minimum_energy_difference):.4f} eV"
         ),
         transform=axes.transAxes,
+        ha="right",
         va="top",
         fontsize=18,
     )
