@@ -14,6 +14,7 @@ from bn_pah_fes.plotting import (
     plot_energy_correlation,
     plot_singlet_triplet_gap_histogram,
     plot_fit_free_energy_history,
+    plot_likelihood,
     plot_likelihood_convergence,
     plot_singlet_triplet_gap_profiles,
 )
@@ -200,4 +201,5 @@ for params in parameter_sets:
     )
     
 
+plot_likelihood(likelihood_histories, RESULTS_DIR)
 plot_likelihood_convergence(likelihood_histories, RESULTS_DIR)
