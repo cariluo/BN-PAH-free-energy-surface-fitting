@@ -62,4 +62,5 @@ def choose_parameters(
     params = Parameters(model=model, initialization=initialization)
     output_fn(f"Selected model: {params.model}")
     output_fn(f"Initialization: {params.initialization}")
+    output_fn(f"Fit padding factor: {params.fit_padding_factor}")
     return params
