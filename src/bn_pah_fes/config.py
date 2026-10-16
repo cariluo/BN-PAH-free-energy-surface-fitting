@@ -10,7 +10,7 @@ class Parameters:
     kB: float = 3.166811563e-6  # Hartree / K
     n_samples: int = 17000
     n_acf: int = 80
-    fit_padding_factor: float = 0.0
+    fit_padding_factor: float = 1.0
     plot_padding_factor: float = 0.0
     q0_padding_factor: float = 0.0
     n_grid: int = 50
