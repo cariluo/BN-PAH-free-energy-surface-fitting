@@ -19,7 +19,7 @@ from bn_pah_fes.plotting import (
     plot_singlet_triplet_gap_profiles,
 )
 from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
-
+from bn_pah_fes.config import DATA_DIR
 
 # Parameters
 parameter_sets = choose_parameters()
@@ -32,7 +32,7 @@ RESULTS_DIR = Path("results")
 RESULTS_DIR.mkdir(exist_ok=True)
 
 # Read energies
-data = load_data(Path("data/ADC2"), N_SAMPLES, N_STRIDE)
+data = load_data(DATA_DIR, N_SAMPLES, N_STRIDE)
 q = data.q
 samples_in_fit = data.samples_in_fit
 print(f"Using {samples_in_fit} samples in the fitting")
