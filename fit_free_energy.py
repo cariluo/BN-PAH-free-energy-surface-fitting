@@ -32,7 +32,7 @@ RESULTS_DIR = Path("results")
 RESULTS_DIR.mkdir(exist_ok=True)
 
 # Read energies
-data = load_data(Path("data"), N_SAMPLES, N_ACF)
+data = load_data(Path("data/ADC2"), N_SAMPLES, N_ACF)
 q = data.q
 samples_in_fit = data.samples_in_fit
 print(f"Using {samples_in_fit} samples in the fitting")
@@ -61,7 +61,7 @@ for params in parameter_sets:
     # Fit selected free-energy model
     model_results_dir = RESULTS_DIR / params.model
     model_results_dir.mkdir(exist_ok=True)
-    
+
     fit_result = fit_free_energy(data, params)
     plot_fit_free_energy_history(
         fit_result.free_energy_history,
@@ -73,7 +73,7 @@ for params in parameter_sets:
         fit_result.optimization_result.fun,
     )
     DeltaG_PBE = fit_result.delta_g_pbe
-    
+
     output_data = np.column_stack([data.idx, q[:, 0], q[:, 1], q[:, 2], DeltaG_PBE])
     np.savetxt(
         model_results_dir / f"DeltaG_PBE_n_grid_{params.n_grid}_fit_padding_factor_{params.fit_padding_factor}.txt",
@@ -81,7 +81,7 @@ for params in parameter_sets:
         fmt=["%d", "%.10e", "%.10e", "%.10e", "%.10e"],
         header="index q0 qS qT DeltaG_PBE_Hartree",
     )
-    
+
     # Reweighted 2D surfaces
     surface_result = calculate_surfaces(fit_result, q, params)
     QS = surface_result.QS
@@ -89,7 +89,7 @@ for params in parameter_sets:
     G0_surface = surface_result.G0_surface
     GS_surface = surface_result.GS_surface
     GT_surface = surface_result.GT_surface
-    
+
     # Use one z-axis/color scale for the KDE and fitted DeltaG0 surfaces.
     surface_limits = (
         min(kde_result.free_energy.min(), G0_surface.min()),
@@ -101,13 +101,13 @@ for params in parameter_sets:
         model_results_dir,
         surface_limits=surface_limits,
     )
-    
+
     # Surface values evaluated at the subsampled trajectory points.
     # These are used to overlay the sampled configurations on the 2D/3D surfaces.
     G0_sampled = surface_result.G0_sampled
     GS_sampled = surface_result.GS_sampled
     GT_sampled = surface_result.GT_sampled
-    
+
     # Singlet and triplet free-energy profiles projected onto q = qS - qT.
     plot_singlet_triplet_gap_profiles(
         surface_result.qS_grid,
@@ -117,7 +117,7 @@ for params in parameter_sets:
         params.beta,
         model_results_dir,
     )
-    
+
     # Find continuous minima of the fitted surfaces.
     minima = find_surface_minima(fit_result, q, params, surface_result)
     for surface, minimum in minima.items():
@@ -127,7 +127,7 @@ for params in parameter_sets:
             f"qT = {minimum.qT:.8f} Ha, "
             f"G = {minimum.value:.8f} Ha"
         )
-    
+
     # Plot surfaces
     plot_delta_g_contour(
         QS,
@@ -199,7 +199,7 @@ for params in parameter_sets:
         samples_in_fit,
         minimum=(minima["GT"].qS, minima["GT"].qT, minima["GT"].value),
     )
-    
+
 
 plot_likelihood(likelihood_histories, RESULTS_DIR)
 plot_likelihood_convergence(likelihood_histories, RESULTS_DIR)
