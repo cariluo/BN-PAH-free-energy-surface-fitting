@@ -25,14 +25,14 @@ from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 parameter_sets = choose_parameters()
 reference_params = parameter_sets[0]
 N_SAMPLES = reference_params.n_samples
-N_ACF = reference_params.n_acf
+N_STRIDE = reference_params.n_stride
 
 # Output directory
 RESULTS_DIR = Path("results")
 RESULTS_DIR.mkdir(exist_ok=True)
 
 # Read energies
-data = load_data(Path("data/ADC2"), N_SAMPLES, N_ACF)
+data = load_data(Path("data/ADC2"), N_SAMPLES, N_STRIDE)
 q = data.q
 samples_in_fit = data.samples_in_fit
 print(f"Using {samples_in_fit} samples in the fitting")

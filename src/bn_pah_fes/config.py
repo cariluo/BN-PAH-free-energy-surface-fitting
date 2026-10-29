@@ -8,8 +8,8 @@ class Parameters:
 
     temperature: float = 300.0
     kB: float = 3.166811563e-6  # Hartree / K
-    n_samples: int = 17000
-    n_acf: int = 80
+    n_samples: int = 30000
+    n_stride: int = 775
     fit_padding_factor: float = 1.0
     plot_padding_factor: float = 0.2
     q0_padding_factor: float = 0.0
