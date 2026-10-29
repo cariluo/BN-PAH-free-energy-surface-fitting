@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
+DATA_DIR = Path("data/ADC2")
 
 @dataclass(frozen=True)
 class Parameters:
