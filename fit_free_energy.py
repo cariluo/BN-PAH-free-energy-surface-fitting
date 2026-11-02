@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-
 from bn_pah_fes.cli import choose_parameters
 from bn_pah_fes.data import load_data
 from bn_pah_fes.fitting import fit_free_energy
@@ -17,9 +16,17 @@ from bn_pah_fes.plotting import (
     plot_likelihood,
     plot_likelihood_convergence,
     plot_singlet_triplet_gap_profiles,
+    MODEL_TITLE_LABELS,
 )
 from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
 from bn_pah_fes.config import DATA_DIR
+
+THEORY_LABELS = {
+    "CC2": "CC2/def2-tzvp",
+    "ADC2": "ADC2/def2-tzvp",
+}
+
+theory_label = THEORY_LABELS[DATA_DIR.name]
 
 # Parameters
 parameter_sets = choose_parameters()
@@ -108,7 +115,10 @@ for params in parameter_sets:
     GS_sampled = surface_result.GS_sampled
     GT_sampled = surface_result.GT_sampled
 
-    # Singlet and triplet free-energy profiles projected onto q = qS - qT.
+    gap_profile_title = (
+        f"{theory_label}/{MODEL_TITLE_LABELS[params.model]}"
+    )
+
     plot_singlet_triplet_gap_profiles(
         surface_result.qS_grid,
         surface_result.qT_grid,
@@ -116,6 +126,7 @@ for params in parameter_sets:
         GT_surface,
         params.beta,
         model_results_dir,
+        title=gap_profile_title,
     )
 
     # Find continuous minima of the fitted surfaces.

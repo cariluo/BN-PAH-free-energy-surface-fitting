@@ -150,6 +150,14 @@ def _project_gap_profile(
 
     return gap_grid, projected_free_energy
 
+MODEL_TITLE_LABELS = {
+    "harmonic": r"$\mathrm{P}_2$",
+    "cubic": r"$\mathrm{P}_3$",
+    "squared_quadratic": r"$\mathrm{P}_2^2$",
+    "squared_cubic": r"$\mathrm{P}_3^2$",
+    "squared_quadratic_plus_cubic": r"$\mathrm{P}_2^2 + \mathrm{P}_3$",
+}
+
 
 def plot_singlet_triplet_gap_profiles(
     qS_grid: np.ndarray,
@@ -158,6 +166,7 @@ def plot_singlet_triplet_gap_profiles(
     GT_surface: np.ndarray,
     beta: float,
     results_dir: Path,
+    title: str,
 ) -> None:
     """Plot singlet and triplet free energies projected onto qS-qT."""
     q_gap, GS_gap = _project_gap_profile(qS_grid, qT_grid, GS_surface, beta)
@@ -232,6 +241,7 @@ def plot_singlet_triplet_gap_profiles(
     plt.ylabel(r"$\Delta G$ (eV)", fontsize=30)
     plt.tick_params(axis="both", labelsize=18)
     plt.legend(fontsize=20)
+    plt.title(title, fontsize=24)
     plt.tight_layout()
     plt.savefig(
         results_dir / "singlet_triplet_gap_profiles.png",
