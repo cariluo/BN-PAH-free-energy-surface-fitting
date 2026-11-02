@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-DATA_DIR = Path("data/ADC2")
+DATA_DIR = Path("data/CC2")
 
 @dataclass(frozen=True)
 class Parameters:
@@ -13,7 +13,7 @@ class Parameters:
     n_samples: int = 30000
     n_stride: int = 775
     fit_padding_factor: float = 1.0
-    plot_padding_factor: float = 0.2
+    plot_padding_factor: float = 0.0
     q0_padding_factor: float = 0.0
     n_grid: int = 50
     n_grid_surface: int = 150
