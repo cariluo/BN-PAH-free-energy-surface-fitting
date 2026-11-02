@@ -142,6 +142,12 @@ def _project_gap_profile(
             -beta * surface_values + log_weights
         ) / beta
 
+    print(
+        "Projection-boundary transition gaps (eV): "
+        f"lower={_to_ev(qS_grid.min() - qT_grid.min()):.6f}, "
+        f"upper={_to_ev(qS_grid.max() - qT_grid.max()):.6f}"
+    )
+
     return gap_grid, projected_free_energy
 
 
@@ -154,10 +160,8 @@ def plot_singlet_triplet_gap_profiles(
     results_dir: Path,
 ) -> None:
     """Plot singlet and triplet free energies projected onto qS-qT."""
-    q_gap, GS_gap = _project_gap_profile(
-        qS_grid, qT_grid, GS_surface, beta
-    )
-    _, GT_gap = _project_gap_profile(qS_grid, qT_grid, GT_surface, beta)
+    q_gap, GS_gap = _project_gap_profile(qS_grid, qT_grid, GS_surface, beta)
+    q_gap, GT_gap = _project_gap_profile(qS_grid, qT_grid, GT_surface, beta)
 
     plt.figure(figsize=(8, 6))
     plt.plot(
@@ -173,6 +177,18 @@ def plot_singlet_triplet_gap_profiles(
         linewidth=2,
         label=r"$\Delta G_T$",
     )
+
+    #q_lower = qS_grid.min() - qT_grid.min()
+    #q_upper = qS_grid.max() - qT_grid.max()
+
+    #for boundary in (q_lower, q_upper):
+    #    plt.axvline(
+    #        _to_ev(boundary),
+    #        color="gray",
+    #        linestyle=":",
+    #        linewidth=1.5,
+    #        zorder=0,
+    #    )
 
     GS_minimum_index = np.argmin(GS_gap)
     GT_minimum_index = np.argmin(GT_gap)
