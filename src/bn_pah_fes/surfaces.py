@@ -284,8 +284,8 @@ def calculate_surfaces(
     """Construct G0, GS, and GT surfaces and sampled values."""
     qS_min, qS_max = q[:, 1].min(), q[:, 1].max()
     qT_min, qT_max = q[:, 2].min(), q[:, 2].max()
-    qS_pad = params.plot_padding_factor * (qS_max - qS_min)
-    qT_pad = params.plot_padding_factor * (qT_max - qT_min)
+    qS_pad = params.projection_padding_factor * (qS_max - qS_min)
+    qT_pad = params.projection_padding_factor * (qT_max - qT_min)
     qS_grid = np.linspace(
         qS_min - qS_pad, qS_max + qS_pad, params.n_grid_surface
     )
