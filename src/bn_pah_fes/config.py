@@ -13,10 +13,10 @@ class Parameters:
     n_samples: int = 30000
     n_stride: int = 775
     fit_padding_factor: float = 1.0
-    plot_padding_factor: float = 0.0
+    projection_padding_factor: float = 0.0
     q0_padding_factor: float = 0.0
     n_grid: int = 50
-    n_grid_surface: int = 150
+    n_grid_surface = round(150 * (1 + 2 * projection_padding_factor))
     n_q0: int = 150
     model: Literal[
         "squared_cubic",
