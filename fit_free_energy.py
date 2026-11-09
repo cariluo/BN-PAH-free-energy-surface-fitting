@@ -24,6 +24,7 @@ from bn_pah_fes.config import DATA_DIR
 THEORY_LABELS = {
     "CC2": "CC2/def2-tzvp",
     "ADC2": "ADC2/def2-tzvp",
+    "PBE0": "PBE0/def2-tzvp",
 }
 
 theory_label = THEORY_LABELS[DATA_DIR.name]
