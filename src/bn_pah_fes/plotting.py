@@ -96,59 +96,132 @@ def _bilinear_interpolate(
     return (1.0 - qS_weight) * lower_values + qS_weight * upper_values
 
 
+def _log_projected_boltzmann_weight(
+    qS_grid: np.ndarray,
+    qT_grid: np.ndarray,
+    surface_data: np.ndarray,
+    beta: float,
+    gap: float,
+    qbar_min: float,
+    qbar_max: float,
+    n_integration_points: int,
+) -> float:
+    """Return log ∫ exp[-beta G(q, qbar)] dqbar over one qbar interval."""
+    if qbar_max <= qbar_min:
+        return -np.inf
+
+    qbar_grid = np.linspace(qbar_min, qbar_max, n_integration_points)
+    qS_values = np.clip(
+        qbar_grid + 0.5 * gap, qS_grid.min(), qS_grid.max()
+    )
+    qT_values = np.clip(
+        qbar_grid - 0.5 * gap, qT_grid.min(), qT_grid.max()
+    )
+    surface_values = _bilinear_interpolate(
+        qS_grid,
+        qT_grid,
+        surface_data,
+        qS_values,
+        qT_values,
+    )
+
+    spacing = (qbar_max - qbar_min) / (n_integration_points - 1)
+    log_weights = np.full(n_integration_points, np.log(spacing))
+    log_weights[[0, -1]] += np.log(0.5)
+
+    return logsumexp(-beta * surface_values + log_weights)
+
+
 def _project_gap_profile(
     qS_grid: np.ndarray,
     qT_grid: np.ndarray,
     surface_data: np.ndarray,
     beta: float,
+    qS_unpadded_bounds: tuple[float, float],
+    qT_unpadded_bounds: tuple[float, float],
     n_gap_points: int | None = None,
     n_integration_points: int | None = None,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Project a 2D surface onto q=qS-qT by integrating out qbar."""
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Project a 2D surface onto q=qS-qT and quantify padded-region weight."""
+    qS_unpadded_min, qS_unpadded_max = qS_unpadded_bounds
+    qT_unpadded_min, qT_unpadded_max = qT_unpadded_bounds
+
+    if (
+        qS_unpadded_min < qS_grid.min()
+        or qS_unpadded_max > qS_grid.max()
+        or qT_unpadded_min < qT_grid.min()
+        or qT_unpadded_max > qT_grid.max()
+    ):
+        raise ValueError("Unpadded bounds must lie within the surface grid.")
+
     gap_min = qS_grid.min() - qT_grid.max()
     gap_max = qS_grid.max() - qT_grid.min()
     n_gap_points = n_gap_points or max(len(qS_grid), len(qT_grid))
     n_integration_points = n_integration_points or max(
         len(qS_grid), len(qT_grid)
     )
-    # Omit the endpoints, where the allowed qbar interval has zero width.
+
+    # Omit endpoints, whose allowed qbar intervals have zero width.
     gap_grid = np.linspace(gap_min, gap_max, n_gap_points + 2)[1:-1]
     projected_free_energy = np.empty_like(gap_grid)
+    extra_weight_fraction = np.empty_like(gap_grid)
 
     for index, gap in enumerate(gap_grid):
-        qbar_min = max(qS_grid.min() - 0.5 * gap, qT_grid.min() + 0.5 * gap)
-        qbar_max = min(qS_grid.max() - 0.5 * gap, qT_grid.max() + 0.5 * gap)
-        qbar_grid = np.linspace(qbar_min, qbar_max, n_integration_points)
-        # Clip only round-off-level excursions at the analytically valid bounds.
-        qS_values = np.clip(
-            qbar_grid + 0.5 * gap, qS_grid.min(), qS_grid.max()
+        # Full interval allowed by the padded surface rectangle.
+        qbar_padded_min = max(
+            qS_grid.min() - 0.5 * gap,
+            qT_grid.min() + 0.5 * gap,
         )
-        qT_values = np.clip(
-            qbar_grid - 0.5 * gap, qT_grid.min(), qT_grid.max()
+        qbar_padded_max = min(
+            qS_grid.max() - 0.5 * gap,
+            qT_grid.max() + 0.5 * gap,
         )
-        surface_values = _bilinear_interpolate(
+
+        log_Z_padded = _log_projected_boltzmann_weight(
             qS_grid,
             qT_grid,
             surface_data,
-            qS_values,
-            qT_values,
-        )
-        log_weights = np.full(
+            beta,
+            gap,
+            qbar_padded_min,
+            qbar_padded_max,
             n_integration_points,
-            np.log((qbar_max - qbar_min) / (n_integration_points - 1)),
         )
-        log_weights[[0, -1]] += np.log(0.5)
-        projected_free_energy[index] = -logsumexp(
-            -beta * surface_values + log_weights
-        ) / beta
+        projected_free_energy[index] = -log_Z_padded / beta
 
-    print(
-        "Projection-boundary transition gaps (eV): "
-        f"lower={_to_ev(qS_grid.min() - qT_grid.min()):.6f}, "
-        f"upper={_to_ev(qS_grid.max() - qT_grid.max()):.6f}"
-    )
+        # Portion of that interval inside the original, unpadded qS/qT rectangle.
+        qbar_in_min = max(
+            qbar_padded_min,
+            qS_unpadded_min - 0.5 * gap,
+            qT_unpadded_min + 0.5 * gap,
+        )
+        qbar_in_max = min(
+            qbar_padded_max,
+            qS_unpadded_max - 0.5 * gap,
+            qT_unpadded_max + 0.5 * gap,
+        )
 
-    return gap_grid, projected_free_energy
+        log_Z_in = _log_projected_boltzmann_weight(
+            qS_grid,
+            qT_grid,
+            surface_data,
+            beta,
+            gap,
+            qbar_in_min,
+            qbar_in_max,
+            n_integration_points,
+        )
+
+        # f_extra = (Z_padded - Z_in) / Z_padded.
+        # expm1 is stable when the extrapolated contribution is small.
+        if np.isneginf(log_Z_in):
+            extra_weight_fraction[index] = 1.0
+        else:
+            extra_weight_fraction[index] = -np.expm1(
+                log_Z_in - log_Z_padded
+            )
+
+    return gap_grid, projected_free_energy, extra_weight_fraction
 
 MODEL_TITLE_LABELS = {
     "harmonic": r"$\mathrm{P}_2$",
@@ -165,21 +238,58 @@ def plot_singlet_triplet_gap_profiles(
     GS_surface: np.ndarray,
     GT_surface: np.ndarray,
     beta: float,
+    qS_unpadded_bounds: tuple[float, float],
+    qT_unpadded_bounds: tuple[float, float],
     results_dir: Path,
     title: str,
 ) -> None:
-    """Plot singlet and triplet free energies projected onto qS-qT."""
-    q_gap, GS_gap = _project_gap_profile(qS_grid, qT_grid, GS_surface, beta)
-    q_gap, GT_gap = _project_gap_profile(qS_grid, qT_grid, GT_surface, beta)
+    """Plot gap profiles and the padded-region contribution to each projection."""
+    q_gap, GS_gap, GS_extra_fraction = _project_gap_profile(
+        qS_grid,
+        qT_grid,
+        GS_surface,
+        beta,
+        qS_unpadded_bounds,
+        qT_unpadded_bounds,
+    )
+    q_gap_GT, GT_gap, GT_extra_fraction = _project_gap_profile(
+        qS_grid,
+        qT_grid,
+        GT_surface,
+        beta,
+        qS_unpadded_bounds,
+        qT_unpadded_bounds,
+    )
+    if not np.allclose(q_gap, q_gap_GT):
+        raise RuntimeError("Singlet and triplet gap grids do not match.")
 
-    plt.figure(figsize=(8, 6))
-    plt.plot(
+    GS_minimum_index = np.argmin(GS_gap)
+    GT_minimum_index = np.argmin(GT_gap)
+    minimum_energy_difference = (
+        GS_gap[GS_minimum_index] - GT_gap[GT_minimum_index]
+    )
+
+    print(
+        "Extrapolated projection weight at profile minima: "
+        f"singlet={100 * GS_extra_fraction[GS_minimum_index]:.2f}%, "
+        f"triplet={100 * GT_extra_fraction[GT_minimum_index]:.2f}%"
+    )
+
+    fig, (ax_profile, ax_extra) = plt.subplots(
+        2,
+        1,
+        figsize=(8, 8),
+        sharex=True,
+        gridspec_kw={"height_ratios": [3, 1], "hspace": 0.08},
+    )
+
+    ax_profile.plot(
         _to_ev(q_gap),
         _to_ev(GS_gap),
         linewidth=2,
         label=r"$\Delta G_S$",
     )
-    plt.plot(
+    ax_profile.plot(
         _to_ev(q_gap),
         _to_ev(GT_gap),
         linestyle="--",
@@ -187,24 +297,7 @@ def plot_singlet_triplet_gap_profiles(
         label=r"$\Delta G_T$",
     )
 
-    #q_lower = qS_grid.min() - qT_grid.min()
-    #q_upper = qS_grid.max() - qT_grid.max()
-
-    #for boundary in (q_lower, q_upper):
-    #    plt.axvline(
-    #        _to_ev(boundary),
-    #        color="gray",
-    #        linestyle=":",
-    #        linewidth=1.5,
-    #        zorder=0,
-    #    )
-
-    GS_minimum_index = np.argmin(GS_gap)
-    GT_minimum_index = np.argmin(GT_gap)
-    minimum_energy_difference = (
-        GS_gap[GS_minimum_index] - GT_gap[GT_minimum_index]
-    )
-    plt.scatter(
+    ax_profile.scatter(
         _to_ev(q_gap[GS_minimum_index]),
         _to_ev(GS_gap[GS_minimum_index]),
         marker="*",
@@ -214,7 +307,7 @@ def plot_singlet_triplet_gap_profiles(
         linewidths=1.0,
         zorder=5,
     )
-    plt.scatter(
+    ax_profile.scatter(
         _to_ev(q_gap[GT_minimum_index]),
         _to_ev(GT_gap[GT_minimum_index]),
         marker="*",
@@ -224,31 +317,64 @@ def plot_singlet_triplet_gap_profiles(
         linewidths=1.0,
         zorder=5,
     )
-    axes = plt.gca()
-    axes.text(
+    ax_profile.text(
         0.98,
         0.98,
         (
             r"$G_S^{\min} - G_T^{\min} = $"
             f"{_to_ev(minimum_energy_difference):.4f} eV"
         ),
-        transform=axes.transAxes,
+        transform=ax_profile.transAxes,
         ha="right",
         va="top",
         fontsize=18,
     )
-    plt.xlabel(r"$q=q_S-q_T$ (eV)", fontsize=30)
-    plt.ylabel(r"$\Delta G$ (eV)", fontsize=30)
-    plt.tick_params(axis="both", labelsize=18)
-    plt.legend(fontsize=20)
-    plt.title(title, fontsize=24)
-    plt.tight_layout()
-    plt.savefig(
+    ax_profile.set_ylabel(r"$\Delta G$ (eV)", fontsize=30)
+    ax_profile.tick_params(axis="both", labelsize=18)
+    ax_profile.legend(fontsize=20)
+    ax_profile.set_title(title, fontsize=24)
+
+    ax_extra.plot(
+        _to_ev(q_gap),
+        100 * GS_extra_fraction,
+        linewidth=2,
+        label="Singlet",
+    )
+    ax_extra.plot(
+        _to_ev(q_gap),
+        100 * GT_extra_fraction,
+        linestyle="--",
+        linewidth=2,
+        label="Triplet",
+    )
+    ax_extra.scatter(
+        _to_ev(q_gap[GS_minimum_index]),
+        100 * GS_extra_fraction[GS_minimum_index],
+        color="red",
+        edgecolor="black",
+        zorder=5,
+    )
+    ax_extra.scatter(
+        _to_ev(q_gap[GT_minimum_index]),
+        100 * GT_extra_fraction[GT_minimum_index],
+        color="red",
+        edgecolor="black",
+        zorder=5,
+    )
+    ax_extra.axhline(50, color="gray", linestyle=":", linewidth=1)
+    ax_extra.set_ylim(0, 100)
+    ax_extra.set_xlabel(r"$q=q_S-q_T$ (eV)", fontsize=30)
+    ax_extra.set_ylabel("Extra\nweight (%)", fontsize=18)
+    ax_extra.tick_params(axis="both", labelsize=18)
+    ax_extra.grid(axis="y", alpha=0.25)
+
+    fig.tight_layout()
+    fig.savefig(
         results_dir / "singlet_triplet_gap_profiles.png",
         dpi=300,
         bbox_inches="tight",
     )
-    plt.close()
+    plt.close(fig)
     print(f"Saved {results_dir / 'singlet_triplet_gap_profiles.png'}")
 
 

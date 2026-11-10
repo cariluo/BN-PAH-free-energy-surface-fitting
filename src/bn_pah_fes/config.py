@@ -13,7 +13,7 @@ class Parameters:
     n_samples: int = 30000
     n_stride: int = 775
     fit_padding_factor: float = 1.0
-    projection_padding_factor: float = 0.0
+    projection_padding_factor: float = 0.75
     q0_padding_factor: float = 0.0
     n_grid: int = 50
     n_grid_surface = round(150 * (1 + 2 * projection_padding_factor))

@@ -126,7 +126,9 @@ for params in parameter_sets:
         GS_surface,
         GT_surface,
         params.beta,
-        model_results_dir,
+        qS_unpadded_bounds=(q[:, 1].min(), q[:, 1].max()),
+        qT_unpadded_bounds=(q[:, 2].min(), q[:, 2].max()),
+        results_dir=model_results_dir,
         title=gap_profile_title,
     )
 
