@@ -242,6 +242,7 @@ def plot_singlet_triplet_gap_profiles(
     qT_unpadded_bounds: tuple[float, float],
     results_dir: Path,
     title: str,
+    filename: str = "singlet_triplet_gap_profiles.png",
 ) -> None:
     """Plot gap profiles and the padded-region contribution to each projection."""
     q_gap, GS_gap, GS_extra_fraction = _project_gap_profile(
@@ -370,7 +371,7 @@ def plot_singlet_triplet_gap_profiles(
 
     fig.tight_layout()
     fig.savefig(
-        results_dir / "singlet_triplet_gap_profiles.png",
+        results_dir / filename,
         dpi=300,
         bbox_inches="tight",
     )
