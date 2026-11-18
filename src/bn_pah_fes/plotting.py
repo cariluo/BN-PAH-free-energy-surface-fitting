@@ -391,7 +391,6 @@ def plot_singlet_triplet_gap_profiles(
     ax_extra.tick_params(axis="both", labelsize=18)
     ax_extra.grid(axis="y", alpha=0.25)
 
-    fig.tight_layout()
     fig.savefig(
         results_dir / filename,
         dpi=300,
