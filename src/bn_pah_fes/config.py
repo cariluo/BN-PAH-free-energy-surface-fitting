@@ -28,6 +28,11 @@ class Parameters:
     initialization: Literal["default", "squared_quadratic_fit"] = "default"
 
     @property
+    def plot_padding_factor(self) -> float:
+        """Backward-compatible alias for projection_padding_factor."""
+        return self.projection_padding_factor
+
+    @property
     def kBT(self) -> float:
         return self.kB * self.temperature
 

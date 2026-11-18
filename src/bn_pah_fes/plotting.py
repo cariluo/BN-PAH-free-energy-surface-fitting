@@ -137,12 +137,26 @@ def _project_gap_profile(
     qT_grid: np.ndarray,
     surface_data: np.ndarray,
     beta: float,
-    qS_unpadded_bounds: tuple[float, float],
-    qT_unpadded_bounds: tuple[float, float],
+    qS_unpadded_bounds: tuple[float, float] | None = None,
+    qT_unpadded_bounds: tuple[float, float] | None = None,
     n_gap_points: int | None = None,
     n_integration_points: int | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Project a 2D surface onto q=qS-qT and quantify padded-region weight."""
+) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Project a 2D surface onto q=qS-qT.
+
+    Omitting both unpadded bounds preserves the original two-value return
+    convention.  Supplying bounds additionally returns the padded-region
+    Boltzmann-weight fraction.
+    """
+    if (qS_unpadded_bounds is None) != (qT_unpadded_bounds is None):
+        raise ValueError(
+            "Specify both qS_unpadded_bounds and qT_unpadded_bounds, or neither."
+        )
+    legacy_return = qS_unpadded_bounds is None
+    if legacy_return:
+        qS_unpadded_bounds = (float(qS_grid.min()), float(qS_grid.max()))
+        qT_unpadded_bounds = (float(qT_grid.min()), float(qT_grid.max()))
+
     qS_unpadded_min, qS_unpadded_max = qS_unpadded_bounds
     qT_unpadded_min, qT_unpadded_max = qT_unpadded_bounds
 
@@ -221,6 +235,8 @@ def _project_gap_profile(
                 log_Z_in - log_Z_padded
             )
 
+    if legacy_return:
+        return gap_grid, projected_free_energy
     return gap_grid, projected_free_energy, extra_weight_fraction
 
 MODEL_TITLE_LABELS = {
@@ -238,13 +254,21 @@ def plot_singlet_triplet_gap_profiles(
     GS_surface: np.ndarray,
     GT_surface: np.ndarray,
     beta: float,
-    qS_unpadded_bounds: tuple[float, float],
-    qT_unpadded_bounds: tuple[float, float],
-    results_dir: Path,
-    title: str,
+    qS_unpadded_bounds: tuple[float, float] | None = None,
+    qT_unpadded_bounds: tuple[float, float] | None = None,
+    results_dir: Path = Path("."),
+    title: str = "Singlet and triplet gap profiles",
     filename: str = "singlet_triplet_gap_profiles.png",
 ) -> None:
     """Plot gap profiles and the padded-region contribution to each projection."""
+    if (qS_unpadded_bounds is None) != (qT_unpadded_bounds is None):
+        raise ValueError(
+            "Specify both qS_unpadded_bounds and qT_unpadded_bounds, or neither."
+        )
+    if qS_unpadded_bounds is None:
+        qS_unpadded_bounds = (float(qS_grid.min()), float(qS_grid.max()))
+        qT_unpadded_bounds = (float(qT_grid.min()), float(qT_grid.max()))
+
     q_gap, GS_gap, GS_extra_fraction = _project_gap_profile(
         qS_grid,
         qT_grid,
@@ -376,7 +400,7 @@ def plot_singlet_triplet_gap_profiles(
         bbox_inches="tight",
     )
     plt.close(fig)
-    print(f"Saved {results_dir / 'singlet_triplet_gap_profiles.png'}")
+    print(f"Saved {results_dir / filename}")
 
 
 def plot_coordinate_time_series(
