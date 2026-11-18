@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-DATA_DIR = Path("data/ADC2")
+DATA_DIR = Path("data/CC2")
 
 @dataclass(frozen=True)
 class Parameters:
@@ -14,10 +14,10 @@ class Parameters:
     n_stride: int = 775
     fit_padding_factor: float = 1.0
     projection_padding_factor: float = 0.75
-    q0_padding_factor: float = 0.0
+    q0_padding_factor: float = 1.0
     n_grid: int = 50
     n_grid_surface = round(150 * (1 + 2 * projection_padding_factor))
-    n_q0: int = 150
+    n_q0 = round(150 * (1 + 2 * q0_padding_factor))
     model: Literal[
         "squared_cubic",
         "squared_quadratic",
