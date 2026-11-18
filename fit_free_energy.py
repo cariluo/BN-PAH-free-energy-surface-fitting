@@ -103,45 +103,12 @@ for params in parameter_sets:
     GT_surface = surface_result.GT_surface
 
     if params.model == "harmonic":
-        G0_finite_analytic = calculate_G0_harmonic_analytic(
-            QS,
-            QT,
-            fit_result,
-            params,
-            q0_bounds=(surface_result.q0_grid[0], surface_result.q0_grid[-1]),
-        )
         G0_full_analytic = calculate_G0_harmonic_analytic(
             QS, QT, fit_result, params
         )
-        G0_finite_analytic -= surface_result.G0_min
         G0_full_analytic -= surface_result.G0_min
-        quadrature_error = G0_surface - G0_finite_analytic
-        truncation_effect = G0_finite_analytic - G0_full_analytic
         GS_full_analytic = G0_full_analytic + QS
         GT_full_analytic = G0_full_analytic + QT
-        comparison = np.column_stack([
-            QS.ravel(),
-            QT.ravel(),
-            G0_surface.ravel(),
-            G0_finite_analytic.ravel(),
-            G0_full_analytic.ravel(),
-            quadrature_error.ravel(),
-            truncation_effect.ravel(),
-        ])
-        np.savetxt(
-            model_results_dir / "harmonic_projection_comparison.txt",
-            comparison,
-            fmt="%.10e",
-            header=(
-                "qS_Hartree qT_Hartree G0_numerical_Hartree "
-                "G0_finite_analytic_Hartree G0_full_analytic_Hartree "
-                "quadrature_error_Hartree truncation_effect_Hartree"
-            ),
-        )
-        print(
-            "Maximum finite-analytic versus numerical q0-projection error: "
-            f"{np.max(np.abs(quadrature_error)):.3e} Ha"
-        )
 
     # Use one z-axis/color scale for the KDE and fitted DeltaG0 surfaces.
     surface_limits = (
