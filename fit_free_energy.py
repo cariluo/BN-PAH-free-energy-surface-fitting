@@ -18,7 +18,11 @@ from bn_pah_fes.plotting import (
     plot_singlet_triplet_gap_profiles,
     MODEL_TITLE_LABELS,
 )
-from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
+from bn_pah_fes.surfaces import (
+    calculate_G0_harmonic_analytic,
+    calculate_surfaces,
+    find_surface_minima,
+)
 from bn_pah_fes.config import DATA_DIR
 
 THEORY_LABELS = {
@@ -98,6 +102,14 @@ for params in parameter_sets:
     GS_surface = surface_result.GS_surface
     GT_surface = surface_result.GT_surface
 
+    if params.model == "harmonic":
+        G0_full_analytic = calculate_G0_harmonic_analytic(
+            QS, QT, fit_result, params
+        )
+        G0_full_analytic -= surface_result.G0_min
+        GS_full_analytic = G0_full_analytic + QS
+        GT_full_analytic = G0_full_analytic + QT
+
     # Use one z-axis/color scale for the KDE and fitted DeltaG0 surfaces.
     surface_limits = (
         min(kde_result.free_energy.min(), G0_surface.min()),
@@ -131,6 +143,19 @@ for params in parameter_sets:
         results_dir=model_results_dir,
         title=gap_profile_title,
     )
+    if params.model == "harmonic":
+        plot_singlet_triplet_gap_profiles(
+            surface_result.qS_grid,
+            surface_result.qT_grid,
+            GS_full_analytic,
+            GT_full_analytic,
+            params.beta,
+            qS_unpadded_bounds=(q[:, 1].min(), q[:, 1].max()),
+            qT_unpadded_bounds=(q[:, 2].min(), q[:, 2].max()),
+            results_dir=model_results_dir,
+            title=f"{gap_profile_title} (analytic q0 projection)",
+            filename="singlet_triplet_gap_profiles_analytic.png",
+        )
 
     # Find continuous minima of the fitted surfaces.
     minima = find_surface_minima(fit_result, q, params, surface_result)

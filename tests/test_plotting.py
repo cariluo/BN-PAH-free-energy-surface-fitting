@@ -35,15 +35,19 @@ def test_gap_profiles_mark_both_projected_minima(tmp_path, monkeypatch):
     annotations = []
     original_text = Axes.text
 
-    def capture_scatter(*args, **kwargs):
+    original_scatter = Axes.scatter
+
+    def capture_scatter(self, *args, **kwargs):
         if kwargs.get("marker") == "*":
             minimum_markers.append((args, kwargs))
+        return original_scatter(self, *args, **kwargs)
+
+    monkeypatch.setattr(Axes, "scatter", capture_scatter)
 
     def capture_text(self, x, y, text, **kwargs):
         annotations.append((x, y, text, kwargs))
         return original_text(self, x, y, text, **kwargs)
 
-    monkeypatch.setattr("bn_pah_fes.plotting.plt.scatter", capture_scatter)
     monkeypatch.setattr(Axes, "text", capture_text)
 
     plot_singlet_triplet_gap_profiles(
