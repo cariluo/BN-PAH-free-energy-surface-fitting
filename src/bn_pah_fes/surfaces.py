@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from scipy.optimize import minimize
-from scipy.special import logsumexp
+from scipy.special import log_ndtr, logsumexp
 
 from .config import Parameters
 from .fitting import FitResult
@@ -77,6 +77,91 @@ def _log_trapezoidal_weights(grid: np.ndarray) -> np.ndarray:
     log_weights = np.full(len(grid), np.log(spacing))
     log_weights[[0, -1]] += np.log(0.5)
     return log_weights
+
+
+def calculate_G0_harmonic_analytic(
+    qS_values: np.ndarray,
+    qT_values: np.ndarray,
+    fit_result: FitResult,
+    params: Parameters,
+    q0_bounds: tuple[float, float] | None = None,
+) -> np.ndarray:
+    """Project the harmonic model over q0 analytically.
+
+    With q0_bounds=None, the q0 integral is over the full real line and
+    the resulting G0(qS, qT) is exactly quadratic.  Supplying finite physical
+    q0 bounds evaluates the exact truncated-Gaussian expression used by the
+    finite numerical quadrature in calculate_G0.
+    """
+    if params.model != "harmonic":
+        raise ValueError(
+            "Analytic q0 projection is available only for model='harmonic'."
+        )
+
+    qS_values = np.asarray(qS_values)
+    qT_values = np.asarray(qT_values)
+    if qS_values.shape != qT_values.shape:
+        raise ValueError("qS_values and qT_values must have the same shape.")
+
+    theta = fit_result.theta
+    q0_mean, qS_mean, qT_mean = fit_result.q_mean
+    q0_std, qS_std, qT_std = fit_result.q_std
+    q0_curvature = theta[4]
+    if q0_std <= 0.0:
+        raise ValueError("The q0 standard deviation must be positive.")
+    if q0_curvature <= 0.0:
+        raise ValueError(
+            "The fitted harmonic model has non-positive q0 curvature, so "
+            "its full-line q0 integral is not normalizable."
+        )
+
+    qS_scaled = (qS_values.ravel() - qS_mean) / qS_std
+    qT_scaled = (qT_values.ravel() - qT_mean) / qT_std
+
+    # Write G_PBE(q0, qS, qT) + q0 as a*x**2 + b*x + c in
+    # x = (q0 - q0_mean) / q0_std.
+    linear_q0 = (
+        theta[1]
+        + theta[7] * qS_scaled
+        + theta[8] * qT_scaled
+        + q0_std
+    )
+    constant = (
+        theta[0]
+        + theta[2] * qS_scaled
+        + theta[3] * qT_scaled
+        + theta[5] * qS_scaled**2
+        + theta[6] * qT_scaled**2
+        + theta[9] * qS_scaled * qT_scaled
+        + q0_mean
+    )
+    completed_square = constant - linear_q0**2 / (4.0 * q0_curvature)
+    log_prefactor = np.log(q0_std) + 0.5 * np.log(
+        np.pi / (params.beta * q0_curvature)
+    )
+
+    G0 = completed_square - params.kBT * log_prefactor
+
+    if q0_bounds is not None:
+        q0_lower, q0_upper = q0_bounds
+        if q0_lower >= q0_upper:
+            raise ValueError("q0_bounds must satisfy q0_lower < q0_upper.")
+
+        x_lower = (q0_lower - q0_mean) / q0_std
+        x_upper = (q0_upper - q0_mean) / q0_std
+        scale = np.sqrt(2.0 * params.beta * q0_curvature)
+        t_lower = scale * (x_lower + linear_q0 / (2.0 * q0_curvature))
+        t_upper = scale * (x_upper + linear_q0 / (2.0 * q0_curvature))
+
+        # log(Phi(t_upper) - Phi(t_lower)), evaluated stably.
+        log_cdf_upper = log_ndtr(t_upper)
+        log_cdf_lower = log_ndtr(t_lower)
+        log_probability = log_cdf_upper + np.log(
+            -np.expm1(log_cdf_lower - log_cdf_upper)
+        )
+        G0 -= params.kBT * log_probability
+
+    return G0.reshape(qS_values.shape)
 
 
 def calculate_G0(

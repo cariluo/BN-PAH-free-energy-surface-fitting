@@ -18,7 +18,7 @@ from bn_pah_fes.plotting import (
     plot_singlet_triplet_gap_profiles,
     MODEL_TITLE_LABELS,
 )
-from bn_pah_fes.surfaces import calculate_surfaces, find_surface_minima
+from bn_pah_fes.surfaces import (\n    calculate_G0_harmonic_analytic,\n    calculate_surfaces,\n    find_surface_minima,\n)
 from bn_pah_fes.config import DATA_DIR
 
 THEORY_LABELS = {
@@ -97,6 +97,45 @@ for params in parameter_sets:
     G0_surface = surface_result.G0_surface
     GS_surface = surface_result.GS_surface
     GT_surface = surface_result.GT_surface
+
+    if params.model == "harmonic":
+        G0_finite_analytic = calculate_G0_harmonic_analytic(
+            QS,
+            QT,
+            fit_result,
+            params,
+            q0_bounds=(surface_result.q0_grid[0], surface_result.q0_grid[-1]),
+        )
+        G0_full_analytic = calculate_G0_harmonic_analytic(
+            QS, QT, fit_result, params
+        )
+        G0_finite_analytic -= surface_result.G0_min
+        G0_full_analytic -= surface_result.G0_min
+        quadrature_error = G0_surface - G0_finite_analytic
+        truncation_effect = G0_finite_analytic - G0_full_analytic
+        comparison = np.column_stack([
+            QS.ravel(),
+            QT.ravel(),
+            G0_surface.ravel(),
+            G0_finite_analytic.ravel(),
+            G0_full_analytic.ravel(),
+            quadrature_error.ravel(),
+            truncation_effect.ravel(),
+        ])
+        np.savetxt(
+            model_results_dir / "harmonic_projection_comparison.txt",
+            comparison,
+            fmt="%.10e",
+            header=(
+                "qS_Hartree qT_Hartree G0_numerical_Hartree "
+                "G0_finite_analytic_Hartree G0_full_analytic_Hartree "
+                "quadrature_error_Hartree truncation_effect_Hartree"
+            ),
+        )
+        print(
+            "Maximum finite-analytic versus numerical q0-projection error: "
+            f"{np.max(np.abs(quadrature_error)):.3e} Ha"
+        )
 
     # Use one z-axis/color scale for the KDE and fitted DeltaG0 surfaces.
     surface_limits = (
