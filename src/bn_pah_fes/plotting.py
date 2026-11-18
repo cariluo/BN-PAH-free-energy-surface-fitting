@@ -8,8 +8,6 @@ from .data import EnergyData
 from .kde import KDEResult
 
 
-plt.rcParams["font.family"] = ["Times New Roman", "DejaVu Serif"]
-
 
 # Shared 3D surface plotting parameters.
 SURFACE_FIGSIZE = (9, 7)
