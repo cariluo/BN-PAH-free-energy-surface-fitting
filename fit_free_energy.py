@@ -18,7 +18,11 @@ from bn_pah_fes.plotting import (
     plot_singlet_triplet_gap_profiles,
     MODEL_TITLE_LABELS,
 )
-from bn_pah_fes.surfaces import (\n    calculate_G0_harmonic_analytic,\n    calculate_surfaces,\n    find_surface_minima,\n)
+from bn_pah_fes.surfaces import (
+    calculate_G0_harmonic_analytic,
+    calculate_surfaces,
+    find_surface_minima,
+)
 from bn_pah_fes.config import DATA_DIR
 
 THEORY_LABELS = {
